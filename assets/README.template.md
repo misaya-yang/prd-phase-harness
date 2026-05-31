@@ -8,6 +8,10 @@
 
 ---
 
+## Harness Intent
+
+{{PRODUCT_THESIS}}
+
 ## Coding Agent Loading Protocol
 
 When assigned a phase goal:
@@ -20,40 +24,45 @@ When assigned a phase goal:
 rg -n "PHASE_ID: <ID>|GOAL_PROMPT|VALIDATION_COMMANDS|ACCEPTANCE_GATES" {{DOCS_PATH}}
 ```
 
-4. Open only the target phase file and the files listed in that phase's `PRIMARY_CONTEXT`.
-5. Set the execution goal from the phase's `GOAL_PROMPT`.
+4. Open only the target phase file and files listed in that phase's `PRIMARY_CONTEXT`.
+5. Create a plan before editing.
 6. Treat `LIKELY_EDIT_PATHS` as the intended write boundary.
-7. Complete `VALIDATION_COMMANDS`, `BROWSER_CHECKS`, `REGRESSION_SCOPE`, `COMPLIANCE_GATES`, and `ACCEPTANCE_GATES` before claiming completion.
+7. Complete validation, browser/runtime checks, regression scope, compliance gates, rollback notes, evidence output, and acceptance gates before claiming completion.
+8. Move to the next phase only after dependency gates are met or explicitly waived in a report.
 
-## Product Thesis
-
-{{PRODUCT_THESIS}}
-
-## Input Sources and Assumptions
+## Source Packet
 
 {{INPUT_SOURCES}}
 
-## Current Product or System Shape
+## Current System Shape
 
 {{CURRENT_SHAPE}}
 
+## Assumptions and Decisions
+
+{{ASSUMPTIONS_AND_DECISIONS}}
+
 ## Phase Order
 
-| Phase | Name | Core Outcome |
-| --- | --- | --- |
+| Phase | Name | Core Outcome | Report |
+| --- | --- | --- | --- |
 {{PHASE_ORDER_ROWS}}
 
 ## Roadmap Cohesion
 
 {{ROADMAP_COHESION}}
 
-## Shared Harness Contract
+## Shared Harness Rules
 
-Each phase is a bounded harness module. It defines task spec, problem boundary, context policy, requirements, test/regression gates, compliance/safety gates, execution capture, evaluator protocol, acceptance criteria, and risks.
+{{SHARED_HARNESS_RULES}}
 
 ## Global Non-Goals
 
 {{GLOBAL_NON_GOALS}}
+
+## Global Compliance Gates
+
+{{GLOBAL_COMPLIANCE_GATES}}
 
 ## Standard Verification Commands
 
@@ -62,3 +71,7 @@ Each phase is a bounded harness module. It defines task spec, problem boundary, 
 ## Required Browser or Runtime Checks
 
 {{REQUIRED_BROWSER_CHECKS}}
+
+## External Inputs and Approvals
+
+{{EXTERNAL_INPUTS_AND_APPROVALS}}

@@ -1,31 +1,28 @@
 # PRD Phase Harness
 
-Agent-ready PRD phase harness skill for Codex, Claude Code, and other goal-mode coding agents.
+Agent-executable PRD phase harness skill for Codex, Claude Code, and other goal-mode coding agents.
 
-This repository packages a portable skill that turns full PRDs, Figma UI, existing codebases, research notes, or rough oral requests into a harness-style phase folder:
+This repository packages a portable skill that converts PRDs, Figma designs, rough feature requests, or existing roadmap docs into a cold-start execution folder:
 
-- `README.md` for roadmap, product thesis, loading protocol, and shared rules
-- `phase-manifest.md` for a compact agent index, dependency flow, validation matrix, and goal prompt templates
-- `phase-XX-*.md` files with bounded task contracts, context policy, requirements, tests, compliance gates, evidence capture, and stop conditions
+- `source-packet.md` for request facts, trust boundaries, assumptions, risks, and approvals
+- `README.md` for folder-level operating protocol
+- `phase-manifest.md` for dependency flow, validation matrix, risk matrix, reports, and goal prompts
+- `phase-XX-*.md` files with machine-readable JSON contracts and grep-friendly coding-agent contracts
+- `reports/` for phase evidence, blockers, screenshots, eval tables, and handoff notes
 
 ## Why This Exists
 
-Goal-mode coding agents are strongest when the work is not only described, but made executable. A normal PRD explains intent. A phase harness gives an agent context policy, edit boundaries, validation commands, regression scope, compliance gates, evidence outputs, and acceptance criteria.
+Long-running coding agents do not fail only because the model is weak. They fail when a large product goal is handed over without a runtime harness: no bounded context, no edit boundary, no feature oracle, no regression bank, no durable report, and no dependency unlock rule.
 
-The result is a more reliable workflow:
+A normal PRD says what the product should become. A Goal Harness says how a fresh agent should continue the work safely.
 
-1. Load the folder-level roadmap.
-2. Pick exactly one phase from the manifest.
-3. Start from the phase's `GOAL_PROMPT`.
-4. Plan before editing.
-5. Execute inside bounded paths.
-6. Run validation and regression checks.
-7. Capture durable evidence.
-8. Move to the next phase only after gates pass.
+```text
+intent -> source packet -> phase map -> machine contract -> execution report -> dependency unlock
+```
 
 ## Install
 
-Clone this repository and copy or symlink it into your Codex skills directory:
+Clone this repository and copy or symlink it into your skill directory:
 
 ```bash
 git clone https://github.com/misaya-yang/prd-phase-harness.git
@@ -33,27 +30,15 @@ mkdir -p ~/.codex/skills
 cp -R prd-phase-harness ~/.codex/skills/prd-phase-harness
 ```
 
-For compatible Claude Code skill workflows, keep `SKILL.md`, `references/`, `assets/`, and `scripts/` together.
+For Claude Code or other Agent Skills-compatible workflows, keep `SKILL.md`, `references/`, `assets/`, and `scripts/` together.
 
 ## Use
 
-Invoke the skill with a request like:
-
 ```text
-Use $prd-phase-harness to turn this PRD or rough product request into a harness-style phase folder with README, manifest, bounded phase specs, tests, and acceptance gates.
+Use $prd-phase-harness to convert this PRD, Figma design, rough feature request, or existing roadmap into an executable goal-mode harness with source packet, manifest, machine contracts, phase reports, validation gates, regression scope, and handoff rules.
 ```
 
-Good inputs include:
-
-- A complete PRD
-- A Figma URL or screenshot set
-- A codebase plus a feature request
-- Research notes
-- A rough oral requirement such as "I want to add a publishing workflow"
-
 ## Scaffold
-
-The helper script creates a starter folder that you can then tighten with project-specific context:
 
 ```bash
 python3 scripts/scaffold_harness_prd.py \
@@ -63,10 +48,22 @@ python3 scripts/scaffold_harness_prd.py \
   --purpose "Convert the feature request into bounded agent implementation phases." \
   --prefix NF \
   --phase "Baseline Audit" \
-  --phase "Core Data Model" \
+  --phase "Core Model and API" \
   --phase "User Experience" \
-  --phase "Release Gates"
+  --phase "Release Gates" \
+  --source-packet
 ```
+
+The scaffold is a starter, not a finished harness. Replace placeholders with repo-specific facts and run strict validation.
+
+## Validate
+
+```bash
+python3 scripts/validate_harness_prd.py docs/new_feature_harness --allow-placeholders
+python3 scripts/validate_harness_prd.py docs/new_feature_harness --strict --quality-score
+```
+
+The validator checks structure, JSON machine contracts, phase IDs, dependency order, report paths, command objects, risk-triggered gates, placeholders, and vague language.
 
 ## Repository Layout
 
@@ -78,44 +75,39 @@ python3 scripts/scaffold_harness_prd.py \
 ├── assets/
 │   ├── README.template.md
 │   ├── phase-manifest.template.md
-│   └── phase.template.md
+│   ├── phase-report.template.md
+│   ├── phase.template.md
+│   └── source-packet.template.md
 ├── references/
+│   ├── agent-adapters.md
+│   ├── builder-protocol.md
+│   ├── phase-contract-schema.md
 │   ├── phase-folder-spec.md
-│   └── research-notes.md
+│   ├── phase-runner-protocol.md
+│   ├── research-notes.md
+│   └── security-protocol.md
 └── scripts/
-    └── scaffold_harness_prd.py
+    ├── scaffold_harness_prd.py
+    └── validate_harness_prd.py
 ```
 
-## Core Contract
+## Core Idea
 
-Every phase file should be assignable as a standalone agent goal and include these grep-friendly anchors:
+Every phase should be a cold-start executable unit with:
 
-- `PHASE_ID`
-- `GOAL_TARGET`
+- Machine Contract JSON
 - `GOAL_PROMPT`
-- `DEPENDS_ON`
 - `READ_FIRST`
 - `PRIMARY_CONTEXT`
 - `LIKELY_EDIT_PATHS`
 - `DO_NOT_EDIT`
-- `EXECUTION_MODE`
-- `VALIDATION_COMMANDS`
-- `BROWSER_CHECKS`
-- `REGRESSION_SCOPE`
-- `COMPLIANCE_GATES`
-- `ACCEPTANCE_GATES`
-- `EVIDENCE_OUTPUT`
-- `STOP_CONDITIONS`
-
-## Validation
-
-Local validation used before publishing:
-
-```bash
-python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py ~/.codex/skills/prd-phase-harness
-python3 -m py_compile ~/.codex/skills/prd-phase-harness/scripts/scaffold_harness_prd.py
-python3 ~/.codex/skills/prd-phase-harness/scripts/scaffold_harness_prd.py --output /tmp/prd-phase-harness-smoke --title "Smoke Harness" --purpose "Smoke test scaffold generation." --prefix SM --phase "Baseline Audit" --phase "Implementation" --phase "Release Gates" --force
-```
+- validation commands
+- browser/runtime checks
+- regression scope
+- compliance gates
+- rollback plan
+- evidence output
+- stop conditions
 
 ## License
 

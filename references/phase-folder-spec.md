@@ -1,6 +1,19 @@
 # Phase Folder Spec
 
-Use this reference when creating or reviewing a harness-style PRD folder.
+Use this reference when writing or reviewing an agent-executable PRD phase folder.
+
+## Design Principle
+
+A phase folder is a runtime harness for coding agents. It should answer:
+
+1. What is the product or engineering intent?
+2. What evidence supports the phase map?
+3. Which phase should be executed now?
+4. What files should the agent read first?
+5. What files may the agent likely edit?
+6. What must the agent avoid?
+7. How does the agent prove completion?
+8. What artifact survives after the chat ends?
 
 ## Folder Layout
 
@@ -12,62 +25,59 @@ docs/<topic>/
 ├── phase-01-<slug>.md
 ├── phase-02-<slug>.md
 └── reports/
+    └── phase-report-template.md
 ```
 
-Create `reports/` only when implementation reports or screenshots are expected soon. Do not create empty report files.
+Create concrete phase reports during execution, not during planning. The report template should exist so every worker uses the same evidence shape.
 
-## README.md
+## README.md Contract
 
-Purpose: orient both humans and agents without requiring them to load every phase.
+The README is the folder-level operating manual. It should be readable by humans and machines.
 
-Recommended sections:
+Required sections:
 
-- Title
-- Date
-- Owner
-- Purpose
+- Harness Intent
 - Coding Agent Loading Protocol
-- Product Thesis
-- Input Sources and Assumptions
-- Current Product or System Shape
-- Highest-Impact Findings, if a baseline/review exists
+- Source Packet
+- Current System Shape
+- Assumptions and Decisions
 - Phase Order
 - Roadmap Cohesion
-- Shared Harness Contract
+- Shared Harness Rules
 - Global Non-Goals
+- Global Compliance Gates
 - Standard Verification Commands
-- Required Browser/View/Runtime Checks, if applicable
+- Required Browser or Runtime Checks
+- External Inputs and Approvals
 
-Include a loading protocol similar to:
+The loading protocol must tell an agent to:
 
-```markdown
-## Coding Agent Loading Protocol
+1. Open README.
+2. Open manifest.
+3. Locate the target phase by `PHASE_ID`.
+4. Open only the target phase and `PRIMARY_CONTEXT`.
+5. Plan before editing.
+6. Stay inside `LIKELY_EDIT_PATHS`.
+7. Verify and write evidence before completion.
+8. Advance only after dependencies pass or are explicitly waived.
 
-When assigned a phase goal:
+## phase-manifest.md Contract
 
-1. Open this `README.md`.
-2. Open `phase-manifest.md`.
-3. Locate the target with `rg -n "PHASE_ID: <ID>|GOAL_PROMPT|VALIDATION_COMMANDS|ACCEPTANCE_GATES" docs/<topic>`.
-4. Open only the target phase file and files listed in `PRIMARY_CONTEXT`.
-5. Set the execution goal from `GOAL_PROMPT`.
-6. Treat `LIKELY_EDIT_PATHS` as the intended write boundary.
-7. Complete `VALIDATION_COMMANDS`, `BROWSER_CHECKS`, `REGRESSION_SCOPE`, and `ACCEPTANCE_GATES` before claiming completion.
-```
-
-## phase-manifest.md
-
-Purpose: compact machine index. Prefer tables and grep anchors over prose.
+The manifest is the compact machine index. Prefer tables and grep anchors over prose.
 
 Required sections:
 
 - Grep Usage
 - Phase Index
+- Phase Report Index
 - Dependency Flow
 - Validation Matrix
+- Risk Matrix
 - Goal Setup Templates
 - Shared Agent Rules
+- External Inputs Checklist
 
-Phase index columns:
+The phase index must include:
 
 - `PHASE_ID`
 - File
@@ -76,52 +86,120 @@ Phase index columns:
 - Main Validation
 - Evidence Output
 
-Validation matrix columns:
+The validation matrix must include:
 
-- `PHASE_ID`
 - Mutates Data
 - Needs Browser/UI
 - Needs Agent/LLM Eval
 - Needs Migration
+- Needs External Service
 - Release Blocking
 
-## Phase File
+## Phase File Contract
 
-Every phase file should be assignable as a standalone agent goal.
-
-Use this section order:
+Every phase file should be assignable as one standalone goal. Use this section order:
 
 ```markdown
 # Phase XX - <Name>
 
-> For agentic workers: enter plan-first mode before editing. Create or update a plan, execute in bounded steps, run verification, and record blockers before moving on.
+> For agentic workers: enter plan-first mode before editing...
 
 **Goal:** <one clear outcome>
 
-**Architecture:** <how the phase should fit the existing system>
+**Architecture:** <how the phase fits the existing system>
 
 **Tech Stack:** <specific frameworks, files, services, tools>
 
 ---
 
+## Machine Contract
+
+```json
+{
+  "schema_version": "prd-phase-harness/v2",
+  "harness_role": "execution",
+  "phase": {
+    "id": "<PREFIX-XX>",
+    "number": "XX",
+    "title": "<Name>",
+    "status": "ready",
+    "type": "baseline|implementation|release|eval",
+    "repo_path": ".",
+    "docs_path": "docs/<topic>",
+    "phase_file": "docs/<topic>/phase-XX-<slug>.md",
+    "depends_on": [],
+    "unlocks": []
+  },
+  "goal": {
+    "target": "<single sentence target>",
+    "prompt": "Complete <PREFIX-XX>...",
+    "plan_required": true,
+    "plan_output": "docs/<topic>/reports/<phase-id>-plan.md",
+    "completion_report": "docs/<topic>/reports/<phase-id>-report.md"
+  },
+  "context": {
+    "read_first": [],
+    "primary_context": [],
+    "context_budget": "focused",
+    "do_not_load_unless": []
+  },
+  "boundaries": {
+    "likely_edit_paths": [],
+    "do_not_edit": [],
+    "external_inputs": [],
+    "secrets_required": []
+  },
+  "tool_policy": {
+    "allowed_tools": [],
+    "approval_required": [],
+    "dangerous_commands": []
+  },
+  "risk": {
+    "tags": [],
+    "data_mutation": false,
+    "migration_required": false,
+    "browser_required": false,
+    "ai_eval_required": false,
+    "external_service_required": false,
+    "release_blocking": false
+  },
+  "validation": {
+    "commands": [],
+    "browser_checks": [],
+    "regression_scope": [],
+    "compliance_gates": [],
+    "acceptance_gates": [],
+    "rollback_plan": []
+  },
+  "evidence": {
+    "outputs": [],
+    "required_artifacts": [],
+    "waiver_policy": "",
+    "next_phase_handoff": ""
+  },
+  "stop_conditions": []
+}
+```
+
 ## Coding Agent Contract
 
 - PHASE_ID: <PREFIX-XX>
 - GOAL_TARGET: <single sentence target>
-- GOAL_PROMPT: Complete <PREFIX-XX> <Name> for `<repo>` by following `docs/<topic>/phase-XX-<slug>.md`; <key constraints>; finish only after validation, regression, compliance, evidence, and acceptance gates pass or blockers are documented.
+- GOAL_PROMPT: Complete <PREFIX-XX> <Name> for `<repo>` by following `docs/<topic>/phase-XX-<slug>.md`; <constraints>; stay inside the named edit boundaries; finish only after validation, regression, compliance, rollback, evidence, and acceptance gates pass or blockers are documented.
 - DEPENDS_ON: <none or IDs>
 - READ_FIRST: `docs/<topic>/README.md`, `docs/<topic>/phase-manifest.md`, this file
 - PRIMARY_CONTEXT: <files, routes, schemas, APIs, design artifacts>
 - LIKELY_EDIT_PATHS: <bounded paths>
-- DO_NOT_EDIT: <non-goals and protected files>
-- EXECUTION_MODE: plan-first; implement stepwise; verify before completion
+- DO_NOT_EDIT: <protected files, non-goals, external systems>
+- EXECUTION_MODE: plan-first; implement stepwise; verify before completion; write evidence before handoff
 - VALIDATION_COMMANDS: <commands>
 - BROWSER_CHECKS: <routes and viewports, or none>
 - REGRESSION_SCOPE: <existing behavior that must still work>
-- COMPLIANCE_GATES: <privacy, security, a11y, data retention, legal, brand, content boundaries>
+- COMPLIANCE_GATES: <privacy, security, a11y, permissions, data retention, brand, content boundaries>
+- ROLLBACK_PLAN: <migration reversal, feature flag, revert path, or none>
 - ACCEPTANCE_GATES: <deterministic gates>
-- EVIDENCE_OUTPUT: <report path, screenshots, logs, tables>
-- STOP_CONDITIONS: <when to stop and ask/document instead of guessing>
+- EVIDENCE_OUTPUT: `docs/<topic>/reports/<phase-id>-<slug>-report.md`
+- STOP_CONDITIONS: <when to stop and document instead of guessing>
 
 ## Task Spec
 
@@ -129,13 +207,15 @@ Use this section order:
 
 ## Context Policy
 
-## Product Requirements
+## Requirements
 
 ### R1 <Requirement Name>
 
 ## Test and Regression Requirements
 
 ## Compliance and Safety Requirements
+
+## Rollback and Recovery
 
 ## Execution Capture
 
@@ -146,112 +226,108 @@ Use this section order:
 ## Risks
 ```
 
+The JSON contract is authoritative. The Markdown contract mirrors the most important fields for grep and human scanning.
+
+## Status Model
+
+Use these status values in the machine contract and reports:
+
+- `draft`: scaffold exists but still contains placeholders or unresolved assumptions.
+- `ready`: phase is executable by a fresh agent.
+- `planned`: phase runner has produced a plan but not completed implementation.
+- `in_progress`: implementation has started.
+- `blocked`: phase cannot complete; report names blocker and remaining evidence.
+- `passed`: all required gates passed and evidence exists.
+- `waived`: user explicitly waived a gate; report names who/what/why.
+
+Do not unlock dependent phases from `draft`, `planned`, `in_progress`, or `blocked` unless the user explicitly waives the dependency in a report.
+
 ## Phase Sizing
 
-Use phases, not tiny implementation tasks. A good phase has:
+A good phase has:
 
 - One coherent product or engineering outcome.
-- Clear dependency boundaries.
-- Enough scope for a coding agent to make meaningful changes.
-- Enough constraints to prevent unrelated rewrites.
-- Verification that can complete in the current repo.
+- One dominant risk profile.
+- A small named context set.
+- Concrete edit boundaries.
+- Verification that can run in the repo or a clear blocker path.
+- Durable evidence output.
 
 Split a phase when:
 
-- It mixes schema/backend/UI/release work with independent risk profiles.
-- It needs different validation environments.
-- It would require broad edits outside `LIKELY_EDIT_PATHS`.
-- It depends on feedback from a prior phase.
+- Backend, schema, UI, migration, eval, or release work need different validation.
+- It would require broad edits outside a narrow boundary.
+- It depends on real feedback from an earlier phase.
+- It mixes exploratory baseline work with implementation.
 
 Merge phases when:
 
-- They cannot produce value or evidence separately.
-- The second phase is only cleanup required by the first.
+- One phase cannot create value or evidence without the other.
+- The second phase is only mandatory cleanup of the first.
 
-## Metadata Rules
-
-Use stable, grep-friendly labels. Keep values concrete:
-
-- Use IDs like `PO-05`, `HE-00`, `NF-02`.
-- Put commands in backticks and separate multiple commands with semicolons.
-- Name exact files, routes, endpoints, data tables, and artifacts.
-- Put "none" explicitly when a field has no values.
-- Do not use vague gates like "works well" without a measurable check.
-
-`GOAL_PROMPT` should include:
-
-- Phase ID and name.
-- Absolute or repo-relative phase path.
-- Main implementation constraints.
-- Required validation classes.
-- Completion rule.
-
-## Requirement Writing
+## Requirement Rules
 
 Write requirements as observable behavior:
 
-- "When owner publishes a draft, status becomes `published`, visibility becomes `public`, and `publishedAt` is set if missing."
-- "Public source cards must never include hidden/admin/draft content."
-- "Mobile viewport `390x844` must have no horizontal overflow."
+- Good: "When owner publishes a draft, status becomes `published`, visibility becomes `public`, and `publishedAt` is set if missing."
+- Good: "Mobile viewport `390x844` has no horizontal overflow and focus remains visible."
+- Bad: "Improve UX."
+- Bad: "Make it robust."
+- Bad: "Add AI magic."
 
-Avoid:
+Use stable requirement IDs (`R1`, `R2`) and connect them to tests or acceptance gates where possible.
 
-- "Improve UX."
-- "Make it robust."
-- "Add AI magic."
+## Verification Rules
 
-## Test and Regression Requirements
+Every phase should name the smallest credible verification set:
 
-Include the smallest credible command set for each phase:
-
-- Static/type checks.
-- Unit/integration tests.
-- Route/API tests.
+- Static checks, type checks, lint.
+- Unit/integration/API tests.
 - Browser checks for UI.
-- Migration checks for schema work.
-- Golden questions/evals for agent behavior.
-- Build or bundle checks for release-sensitive work.
+- Migration dry-runs or rollback checks for schema work.
+- Golden questions, eval tables, traces, or refusal checks for AI behavior.
+- Build checks for release-sensitive work.
 
-For rough early phases, allow explicit blocker documentation, but do not let "blocked" silently become "passed."
+If a command cannot run locally, the phase must require a blocker note explaining why and what evidence was still collected.
 
-## Compliance and Safety Requirements
+## Compliance and Safety Rules
 
-Include this section even if it says "none beyond standard repo policies." Consider:
+Include compliance gates even for small features. Consider:
 
 - Privacy and PII.
 - Auth and permissions.
 - Hidden/admin/draft content boundaries.
 - Data retention and deletion.
-- External API keys/secrets.
+- External API keys and secrets.
 - Accessibility.
 - Security and rate limiting.
-- Copyright/licensing.
+- Copyright and licensing.
 - Brand/design constraints.
 - Migration and rollback safety.
 
-## Evidence Output
+## Evidence Rules
 
-Require artifacts that survive the chat:
+Evidence must survive chat context. Prefer:
 
-- Markdown report under `docs/<topic>/reports/`.
-- JSON route/audit output.
+- Markdown phase reports.
+- Command summaries.
 - Browser screenshots.
 - Console/network error summaries.
-- Golden question table.
+- JSON audit output.
+- Golden-question tables.
 - Migration notes.
-- Test command summaries.
-- Known blockers list.
+- Known blockers and user waivers.
 
 ## Review Checklist
 
-Before finalizing a folder, verify:
+Before finalizing a folder:
 
-- README explains how agents should load the folder.
-- Manifest indexes every phase and dependencies are acyclic.
-- Every phase has the complete `Coding Agent Contract`.
-- Every phase has bounded `PRIMARY_CONTEXT`, `LIKELY_EDIT_PATHS`, and `DO_NOT_EDIT`.
-- Every phase has explicit tests, regression scope, compliance gates, acceptance gates, and evidence output.
+- README explains how an agent should load the folder.
+- Manifest indexes every phase, dependency, report, risk, and validation class.
+- Dependencies are acyclic.
+- Every phase has the full `Coding Agent Contract`.
+- Every phase has concrete context, edit paths, protected paths, validation, regression, compliance, rollback, acceptance, evidence, and stop conditions.
 - Baseline/audit exists or is explicitly waived.
 - Non-goals prevent scope creep.
 - No phase depends on unstated chat context.
-- No placeholder text remains.
+- No unresolved placeholder remains unless the user requested a scaffold.

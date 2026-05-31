@@ -1,6 +1,6 @@
 # {{TOPIC}} Phase Manifest
 
-This is the compact index for coding agents. Prefer this file plus the target phase file over loading the whole directory.
+This is the compact index for coding agents. Prefer this file plus the target phase file over loading the whole folder.
 
 ## Grep Usage
 
@@ -34,6 +34,12 @@ rg -n "ACCEPTANCE_GATES:" {{DOCS_PATH}}
 | --- | --- | --- | --- | --- | --- |
 {{PHASE_INDEX_ROWS}}
 
+## Phase Report Index
+
+| PHASE_ID | Required Report |
+| --- | --- |
+{{PHASE_REPORT_ROWS}}
+
 ## Dependency Flow
 
 ```text
@@ -42,13 +48,19 @@ rg -n "ACCEPTANCE_GATES:" {{DOCS_PATH}}
 
 ## Validation Matrix
 
-| PHASE_ID | Mutates Data | Needs Browser/UI | Needs Agent/LLM Eval | Needs Migration | Release Blocking |
-| --- | --- | --- | --- | --- | --- |
+| PHASE_ID | Mutates Data | Needs Browser/UI | Needs Agent/LLM Eval | Needs Migration | Needs External Service | Release Blocking |
+| --- | --- | --- | --- | --- | --- | --- |
 {{VALIDATION_MATRIX_ROWS}}
+
+## Risk Matrix
+
+| PHASE_ID | Primary Risk | Stop Condition |
+| --- | --- | --- |
+{{RISK_MATRIX_ROWS}}
 
 ## Goal Setup Templates
 
-Use the exact phase file `GOAL_PROMPT` when creating an agent goal. If a phase has dependencies, do not execute it until dependency acceptance gates are met or explicitly waived.
+Use the exact phase file `GOAL_PROMPT` when creating an agent goal. If a phase has dependencies, do not execute it until dependency acceptance gates are met or explicitly waived in the previous phase report.
 
 Example:
 
@@ -59,3 +71,7 @@ Example:
 ## Shared Agent Rules
 
 {{SHARED_AGENT_RULES}}
+
+## External Inputs Checklist
+
+{{EXTERNAL_INPUTS_CHECKLIST}}
