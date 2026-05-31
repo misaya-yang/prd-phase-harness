@@ -1,0 +1,4 @@
+interface:
+  display_name: "PRD Phase Harness"
+  short_description: "Turn requirements into agent-ready phase docs"
+  default_prompt: "Use $prd-phase-harness to turn this PRD or rough product request into a harness-style phase folder with README, manifest, bounded phase specs, tests, and acceptance gates."
