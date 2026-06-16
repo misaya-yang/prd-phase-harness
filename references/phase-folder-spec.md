@@ -20,6 +20,13 @@ A phase folder is a runtime harness for coding agents. It should answer:
 ```text
 docs/<topic>/
 ├── README.md
+├── source-packet.md
+├── loop-contract.json
+├── loop-state.json
+├── feature-oracle.json
+├── progress-log.md
+├── agent-handoff.md
+├── next-window-prompt.md
 ├── phase-manifest.md
 ├── phase-00-<baseline-slug>.md
 ├── phase-01-<slug>.md
@@ -38,7 +45,9 @@ Required sections:
 
 - Harness Intent
 - Coding Agent Loading Protocol
+- Long-Running Runtime Protocol
 - Source Packet
+- Runtime Artifacts
 - Current System Shape
 - Assumptions and Decisions
 - Phase Order
@@ -49,17 +58,20 @@ Required sections:
 - Standard Verification Commands
 - Required Browser or Runtime Checks
 - External Inputs and Approvals
+- New Window Prompt
 
 The loading protocol must tell an agent to:
 
 1. Open README.
 2. Open manifest.
-3. Locate the target phase by `PHASE_ID`.
-4. Open only the target phase and `PRIMARY_CONTEXT`.
-5. Plan before editing.
-6. Stay inside `LIKELY_EDIT_PATHS`.
-7. Verify and write evidence before completion.
-8. Advance only after dependencies pass or are explicitly waived.
+3. Open loop contract, loop state, feature oracle, progress log, handoff, and next-window prompt.
+4. Locate the target phase by `PHASE_ID`.
+5. Open only the target phase and `PRIMARY_CONTEXT`.
+6. Plan before editing.
+7. Stay inside `LIKELY_EDIT_PATHS`.
+8. Verify and write evidence before completion.
+9. Update progress, handoff, report, and oracle evidence before exit.
+10. Advance only after dependencies pass or are explicitly waived.
 
 ## phase-manifest.md Contract
 
@@ -73,6 +85,8 @@ Required sections:
 - Dependency Flow
 - Validation Matrix
 - Risk Matrix
+- Runtime Artifacts
+- Agent Role Handoffs
 - Goal Setup Templates
 - Shared Agent Rules
 - External Inputs Checklist
@@ -116,7 +130,7 @@ Every phase file should be assignable as one standalone goal. Use this section o
 
 ```json
 {
-  "schema_version": "prd-phase-harness/v2",
+  "schema_version": "prd-phase-harness/v3",
   "harness_role": "execution",
   "phase": {
     "id": "<PREFIX-XX>",
@@ -136,6 +150,20 @@ Every phase file should be assignable as one standalone goal. Use this section o
     "plan_required": true,
     "plan_output": "docs/<topic>/reports/<phase-id>-plan.md",
     "completion_report": "docs/<topic>/reports/<phase-id>-report.md"
+  },
+  "runtime": {
+    "feature_oracle": "docs/<topic>/feature-oracle.json",
+    "loop_contract": "docs/<topic>/loop-contract.json",
+    "loop_state": "docs/<topic>/loop-state.json",
+    "progress_log": "docs/<topic>/progress-log.md",
+    "handoff": "docs/<topic>/agent-handoff.md",
+    "next_window_prompt": "docs/<topic>/next-window-prompt.md",
+    "session_boot": {
+      "read_progress": true,
+      "run_baseline_check": true,
+      "update_progress_before_exit": true
+    },
+    "agent_roles": ["planner", "generator", "evaluator"]
   },
   "context": {
     "read_first": [],

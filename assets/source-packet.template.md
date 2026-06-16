@@ -36,6 +36,12 @@ TODO
 
 - TODO
 
+## Runtime Decomposition Notes
+
+- Feature-oracle cases should describe observable user or system behavior, not implementation chores.
+- Phase boundaries should isolate the dominant risk: schema/API, UI, agent/eval, migration, external service, or release.
+- Handoffs should preserve decisions, blockers, validation evidence, and next target phase without copying hidden chat context.
+
 ## External Inputs and Approvals
 
 - TODO

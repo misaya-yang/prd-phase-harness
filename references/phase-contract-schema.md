@@ -5,10 +5,11 @@ This is the semantic schema for the `Machine Contract` JSON block in each phase.
 ## Required Top-Level Fields
 
 ```text
-schema_version: string, currently "prd-phase-harness/v2"
+schema_version: string, currently "prd-phase-harness/v3"
 harness_role: "execution" | "evaluation" | "hybrid"
 phase: object
 goal: object
+runtime: object
 context: object
 boundaries: object
 tool_policy: object
@@ -44,6 +45,21 @@ completion_report: required report path
 ```
 
 `prompt` must include the phase ID and phase file path.
+
+## `runtime`
+
+```text
+feature_oracle: path to feature-oracle.json
+loop_contract: path to loop-contract.json
+loop_state: path to loop-state.json
+progress_log: path to progress-log.md
+handoff: path to agent-handoff.md
+next_window_prompt: path to next-window-prompt.md
+session_boot: object with read_progress, run_baseline_check, update_progress_before_exit booleans
+agent_roles: array containing planner, generator, evaluator when the harness supports independent review
+```
+
+The runtime files are the restart surface for fresh context windows. They should be concrete paths in final harnesses.
 
 ## `context`
 
@@ -113,7 +129,7 @@ next_phase_handoff: what unlocks or blocks dependent phases
 | `auth`, `security` | `compliance_gates` covering permissions, session, abuse, secret, and failure behavior. |
 | `payment` | `compliance_gates` covering idempotency, test mode, webhooks, no-real-charge, and audit. |
 | `database`, `schema`, `migration` | `rollback_plan` and migration/idempotency validation. |
-| `ai`, `agent`, `llm`, `eval` | acceptance/eval gates with golden questions, trace capture, source boundaries, and privacy behavior. |
+| `ai`, `agent`, `llm`, `eval` | acceptance/eval gates with golden questions, trace capture, tool/source boundaries, privacy behavior, and evaluator handoff. |
 | `external-service` | external input and approval gates plus mock/offline fallback. |
 | `release` | build/smoke/deploy/rollback/monitoring evidence. |
 

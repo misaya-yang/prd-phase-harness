@@ -47,13 +47,19 @@ def phase_contract(
     unlocks = [phases[index + 1]["id"]] if index + 1 < len(phases) else []
     phase_file = f"{docs_path}/{phase['file']}"
     report = f"{docs_path}/{phase['report']}"
+    feature_oracle = f"{docs_path}/feature-oracle.json"
+    loop_contract = f"{docs_path}/loop-contract.json"
+    loop_state = f"{docs_path}/loop-state.json"
+    progress_log = f"{docs_path}/progress-log.md"
+    agent_handoff = f"{docs_path}/agent-handoff.md"
+    next_window_prompt = f"{docs_path}/next-window-prompt.md"
     prompt = (
         f"Complete {phase['id']} {phase['name']} for `{repo_path}` by following `{phase_file}`; "
         "TODO: key constraints; stay inside the named edit boundaries; finish only after validation, "
         "regression, compliance, rollback, evidence, and acceptance gates pass or blockers are documented."
     )
     contract = {
-        "schema_version": "prd-phase-harness/v2",
+        "schema_version": "prd-phase-harness/v3",
         "harness_role": "execution",
         "phase": {
             "id": phase["id"],
@@ -74,10 +80,30 @@ def phase_contract(
             "plan_output": f"{docs_path}/reports/{phase['id'].lower()}-{phase['slug']}-plan.md",
             "completion_report": report,
         },
+        "runtime": {
+            "feature_oracle": feature_oracle,
+            "loop_contract": loop_contract,
+            "loop_state": loop_state,
+            "progress_log": progress_log,
+            "handoff": agent_handoff,
+            "next_window_prompt": next_window_prompt,
+            "session_boot": {
+                "read_progress": True,
+                "run_baseline_check": True,
+                "update_progress_before_exit": True,
+            },
+            "agent_roles": ["planner", "generator", "evaluator"],
+        },
         "context": {
             "read_first": [
                 f"{docs_path}/README.md",
                 f"{docs_path}/phase-manifest.md",
+                loop_contract,
+                loop_state,
+                feature_oracle,
+                progress_log,
+                agent_handoff,
+                next_window_prompt,
                 phase_file,
             ],
             "primary_context": ["TODO: exact files/routes/design artifacts to inspect"],
@@ -161,7 +187,12 @@ def main() -> int:
     parser.add_argument(
         "--source-packet",
         action="store_true",
-        help="Create source-packet.md for larger PRD/Figma/codebase inputs",
+        help="Deprecated no-op. source-packet.md is now created by default.",
+    )
+    parser.add_argument(
+        "--no-source-packet",
+        action="store_true",
+        help="Do not create source-packet.md",
     )
     args = parser.parse_args()
 
@@ -192,12 +223,22 @@ def main() -> int:
             }
         )
 
+    source_packet_enabled = not args.no_source_packet
     source_packet_path = output / "source-packet.md"
+    runtime_paths = [
+        output / "loop-contract.json",
+        output / "loop-state.json",
+        output / "feature-oracle.json",
+        output / "progress-log.md",
+        output / "agent-handoff.md",
+        output / "next-window-prompt.md",
+    ]
     output_files = [output / "README.md", output / "phase-manifest.md"]
     output_files.extend(output / phase["file"] for phase in phases)
+    output_files.extend(runtime_paths)
     if not args.no_report_template:
         output_files.append(report_template_path)
-    if args.source_packet:
+    if source_packet_enabled:
         output_files.append(source_packet_path)
     fail_if_exists(output_files, args.force)
 
@@ -242,6 +283,12 @@ def main() -> int:
             "CURRENT_SHAPE": "TODO: summarize current system shape, architecture, constraints, and known risks.",
             "ASSUMPTIONS_AND_DECISIONS": "- TODO: list assumptions and decisions that should survive chat context.",
             "PHASE_ORDER_ROWS": phase_order_rows,
+            "LOOP_CONTRACT_PATH": f"{docs_path}/loop-contract.json",
+            "LOOP_STATE_PATH": f"{docs_path}/loop-state.json",
+            "FEATURE_ORACLE_PATH": f"{docs_path}/feature-oracle.json",
+            "PROGRESS_LOG_PATH": f"{docs_path}/progress-log.md",
+            "AGENT_HANDOFF_PATH": f"{docs_path}/agent-handoff.md",
+            "NEXT_WINDOW_PROMPT_PATH": f"{docs_path}/next-window-prompt.md",
             "ROADMAP_COHESION": "TODO: explain why these phases are ordered this way and what each dependency protects.",
             "SHARED_HARNESS_RULES": "- Stay inside phase boundaries.\n- Plan before editing.\n- Do not claim completion without durable evidence.\n- Document blockers and user waivers explicitly.",
             "GLOBAL_NON_GOALS": "- TODO: list scope exclusions and future ideas that must not leak into phases.",
@@ -262,6 +309,12 @@ def main() -> int:
             "DEPENDENCY_FLOW": dependency_flow,
             "VALIDATION_MATRIX_ROWS": validation_matrix_rows,
             "RISK_MATRIX_ROWS": risk_matrix_rows,
+            "LOOP_CONTRACT_PATH": f"{docs_path}/loop-contract.json",
+            "LOOP_STATE_PATH": f"{docs_path}/loop-state.json",
+            "FEATURE_ORACLE_PATH": f"{docs_path}/feature-oracle.json",
+            "PROGRESS_LOG_PATH": f"{docs_path}/progress-log.md",
+            "AGENT_HANDOFF_PATH": f"{docs_path}/agent-handoff.md",
+            "NEXT_WINDOW_PROMPT_PATH": f"{docs_path}/next-window-prompt.md",
             "GOAL_PROMPT_EXAMPLE": goal_example,
             "SHARED_AGENT_RULES": "- Use the exact phase `GOAL_PROMPT` when starting a goal.\n- Open only `READ_FIRST` and `PRIMARY_CONTEXT` before planning.\n- Expand edit scope only when a blocker is documented.\n- Write the phase report before moving on.",
             "EXTERNAL_INPUTS_CHECKLIST": "- TODO: list inputs not guaranteed to exist in the repo.",
@@ -271,7 +324,7 @@ def main() -> int:
     (output / "README.md").write_text(readme, encoding="utf-8")
     (output / "phase-manifest.md").write_text(manifest, encoding="utf-8")
 
-    if args.source_packet:
+    if source_packet_enabled:
         source_packet = render(
             read_template("source-packet.template.md"),
             {
@@ -281,6 +334,115 @@ def main() -> int:
             },
         )
         source_packet_path.write_text(source_packet, encoding="utf-8")
+
+    loop_contract = {
+        "schema_version": "prd-phase-harness/loop-contract/v1",
+        "goal": "Run one bounded phase and one feature-oracle item until evidence proves pass, block, or fail.",
+        "cycle": ["observe", "select", "execute", "verify", "record", "decide"],
+        "max_iterations": 3,
+        "state_file": f"{docs_path}/loop-state.json",
+        "oracle_file": f"{docs_path}/feature-oracle.json",
+        "progress_file": f"{docs_path}/progress-log.md",
+        "handoff_file": f"{docs_path}/agent-handoff.md",
+        "done_when": [
+            "Selected phase report exists.",
+            "Required validation evidence is recorded.",
+            "Feature oracle status is passing, blocked, or waived.",
+        ],
+        "continue_when": [
+            "Validator is clean.",
+            "Work remains in the selected phase.",
+            "Iteration is below max_iterations.",
+        ],
+        "stop_when": [
+            "Credentials or approvals are missing.",
+            "Validation fails outside phase scope.",
+            "Edits outside the phase boundary are required.",
+        ],
+    }
+    (output / "loop-contract.json").write_text(
+        json.dumps(loop_contract, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    loop_state = {
+        "schema_version": "prd-phase-harness/loop-state/v1",
+        "active_phase": first["id"],
+        "active_feature": f"{args.prefix.upper()}-F001",
+        "iteration": 0,
+        "status": "planned",
+        "last_decision": "Start with the first phase and collect baseline evidence.",
+        "next_action": f"Execute {first['id']} by following {docs_path}/{first['file']}.",
+    }
+    (output / "loop-state.json").write_text(
+        json.dumps(loop_state, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    feature_oracle = {
+        "schema_version": "prd-phase-harness/feature-oracle/v1",
+        "instructions": {
+            "allowed_edits": "Coding agents may update only status, evidence, and notes fields unless the user explicitly changes scope.",
+            "completion_rule": "A feature is passing only after end-to-end evidence exists.",
+            "status_values": ["failing", "passing", "blocked", "waived"],
+        },
+        "features": [
+            {
+                "id": f"{args.prefix.upper()}-F{index + 1:03d}",
+                "phase_id": phase["id"],
+                "category": "phase",
+                "description": f"{phase['name']} phase completes its bounded goal and writes durable evidence.",
+                "steps": [
+                    f"Open {docs_path}/{phase['file']}.",
+                    "Execute only the assigned phase contract.",
+                    f"Write {docs_path}/{phase['report']} with validation evidence.",
+                ],
+                "status": "failing",
+                "evidence": "",
+                "notes": "",
+            }
+            for index, phase in enumerate(phases)
+        ],
+    }
+    (output / "feature-oracle.json").write_text(
+        json.dumps(feature_oracle, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    progress_log = render(
+        read_template("progress-log.template.md"),
+        {
+            "TITLE": args.title,
+            "DATE": today,
+            "DOCS_PATH": docs_path,
+        },
+    )
+    (output / "progress-log.md").write_text(progress_log, encoding="utf-8")
+
+    handoff = render(
+        read_template("agent-handoff.template.md"),
+        {
+            "TITLE": args.title,
+            "DATE": today,
+            "DOCS_PATH": docs_path,
+            "FIRST_PHASE_ID": first["id"],
+            "FIRST_PHASE_FILE": f"{docs_path}/{first['file']}",
+            "FEATURE_ORACLE_PATH": f"{docs_path}/feature-oracle.json",
+            "PROGRESS_LOG_PATH": f"{docs_path}/progress-log.md",
+        },
+    )
+    (output / "agent-handoff.md").write_text(handoff, encoding="utf-8")
+
+    next_prompt = render(
+        read_template("next-window-prompt.template.md"),
+        {
+            "TITLE": args.title,
+            "DOCS_PATH": docs_path,
+            "FIRST_PHASE_ID": first["id"],
+            "FIRST_PHASE_FILE": f"{docs_path}/{first['file']}",
+        },
+    )
+    (output / "next-window-prompt.md").write_text(next_prompt, encoding="utf-8")
 
     if not args.no_report_template:
         report_template = render(
@@ -317,6 +479,8 @@ def main() -> int:
                 "GOAL_PROMPT_CONSTRAINTS": "TODO: key constraints",
                 "DEPENDS_ON": phase["depends_on"],
                 "DOCS_PATH": docs_path,
+                "LOOP_CONTRACT_PATH": f"{docs_path}/loop-contract.json",
+                "LOOP_STATE_PATH": f"{docs_path}/loop-state.json",
                 "PRIMARY_CONTEXT": "TODO: exact files/routes/design artifacts to inspect",
                 "LIKELY_EDIT_PATHS": "TODO: bounded paths",
                 "DO_NOT_EDIT": "TODO: protected paths and non-goals",
@@ -328,6 +492,10 @@ def main() -> int:
                 "ACCEPTANCE_GATES": "TODO: deterministic acceptance gates",
                 "EVIDENCE_OUTPUT": f"`{docs_path}/{phase['report']}`",
                 "STOP_CONDITIONS": "TODO: when to stop and ask/document instead of guessing",
+                "FEATURE_ORACLE_PATH": f"{docs_path}/feature-oracle.json",
+                "PROGRESS_LOG_PATH": f"{docs_path}/progress-log.md",
+                "AGENT_HANDOFF_PATH": f"{docs_path}/agent-handoff.md",
+                "NEXT_WINDOW_PROMPT_PATH": f"{docs_path}/next-window-prompt.md",
                 "TASK_SPEC": "TODO: describe the behavior to build or evidence to collect.",
                 "IN_SCOPE": "- TODO",
                 "OUT_OF_SCOPE": "- TODO",
@@ -350,8 +518,9 @@ def main() -> int:
     print(f"Phases: {', '.join(phase['id'] for phase in phases)}")
     if not args.no_report_template:
         print(f"Report template: {report_template_path}")
-    if args.source_packet:
+    if source_packet_enabled:
         print(f"Source packet: {source_packet_path}")
+    print("Runtime artifacts: loop-contract.json, loop-state.json, feature-oracle.json, progress-log.md, agent-handoff.md, next-window-prompt.md")
     return 0
 
 

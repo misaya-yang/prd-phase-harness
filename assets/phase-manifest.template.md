@@ -58,6 +58,24 @@ rg -n "ACCEPTANCE_GATES:" {{DOCS_PATH}}
 | --- | --- | --- |
 {{RISK_MATRIX_ROWS}}
 
+## Runtime Artifacts
+
+| Artifact | Path | Agent Rule |
+| --- | --- | --- |
+| Loop Contract | `{{LOOP_CONTRACT_PATH}}` | Follow observe, select, execute, verify, record, decide before claiming progress. |
+| Loop State | `{{LOOP_STATE_PATH}}` | Keep active phase, feature, iteration, status, and next action current. |
+| Feature Oracle | `{{FEATURE_ORACLE_PATH}}` | Update only status, evidence, and notes for the feature being worked. |
+| Progress Log | `{{PROGRESS_LOG_PATH}}` | Append session start/end, validation, and blocker notes. |
+| Agent Handoff | `{{AGENT_HANDOFF_PATH}}` | Keep planner, generator, and evaluator notes file-based and brief. |
+| Next Window Prompt | `{{NEXT_WINDOW_PROMPT_PATH}}` | Use this to restart work in a fresh context window. |
+
+## Agent Role Handoffs
+
+- Planner role: expand intent into phase contracts and feature-oracle cases without over-specifying implementation details.
+- Generator role: execute one phase/feature item, update evidence, and hand off to evaluation.
+- Evaluator role: review from files and runtime checks, reject superficial completion, and write actionable findings.
+- For small low-risk phases, one agent may play generator and evaluator only after running objective validation commands.
+
 ## Goal Setup Templates
 
 Use the exact phase file `GOAL_PROMPT` when creating an agent goal. If a phase has dependencies, do not execute it until dependency acceptance gates are met or explicitly waived in the previous phase report.

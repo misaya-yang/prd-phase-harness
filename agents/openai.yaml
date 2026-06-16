@@ -1,4 +1,4 @@
 interface:
   display_name: "PRD Phase Harness"
-  short_description: "Build goal-mode phase harnesses"
-  default_prompt: "Use $prd-phase-harness to convert this PRD, Figma design, rough feature request, or existing roadmap into an executable goal-mode harness with source packet, manifest, machine contracts, phase reports, validation gates, regression scope, and handoff rules."
+  short_description: "Build loop-driven agent phase harnesses"
+  default_prompt: "Use $prd-phase-harness to convert this PRD, Figma design, rough feature request, or existing roadmap into an executable long-running agent harness with source packet, loop contract, loop state, feature oracle, progress log, planner/generator/evaluator handoff, next-window prompt, manifest, machine contracts, validation gates, regression scope, phase reports, and unlock rules."

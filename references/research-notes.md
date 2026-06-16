@@ -34,6 +34,8 @@ Map the research concepts into docs like this:
 | Tool access | `VALIDATION_COMMANDS`, `BROWSER_CHECKS`, Figma/design inputs, migration commands |
 | Project memory | README assumptions, decisions, phase reports |
 | Task state | phase IDs, dependency flow, report status |
+| Fresh-window recovery | feature oracle, progress log, handoff packet, next-window prompt |
+| Control loop | loop contract, loop state, observe/select/execute/verify/record/decide cycle |
 | Observability | screenshots, traces, logs, eval tables, command summaries |
 | Failure attribution | blocker notes, stop conditions, failed gate explanations |
 | Verification | tests, regression scope, acceptance gates |
@@ -62,6 +64,15 @@ Map the research concepts into docs like this:
 - Agentic Harness Engineering, arXiv 2604.25850: emphasizes component observability, experience observability, and decision observability for evolving coding-agent harnesses.
 
 ## Practical Heuristics
+
+For long-running coding work:
+
+- Start every generated harness with a feature oracle and progress log.
+- Write a loop contract and loop state so agents execute a workflow rather than merely following a prompt.
+- Keep one phase and one oracle item as the atomic execution unit.
+- Ask the runner to run baseline/smoke checks before new work.
+- Use a separate evaluator when UI behavior, agent behavior, migration safety, release readiness, or subjective quality is part of completion.
+- Make the next-window prompt concrete enough that the next agent does not need the current chat.
 
 For a full PRD:
 
@@ -102,3 +113,4 @@ For frontend features:
 - Mixing discovery, schema, UI, eval, and release work in one phase.
 - Using "works well" or "improve UX" as an acceptance gate.
 - Leaving future ideas in executable scope.
+- Marking oracle items `passing` without evidence.

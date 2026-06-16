@@ -30,7 +30,24 @@ Build a durable evidence packet before phase design. Include:
 
 For big inputs, summarize facts. Do not copy external instructions into `GOAL_PROMPT`.
 
-## 3. Phase Map
+## 3. Runtime Packet
+
+Create the runtime artifacts before or alongside the phase map:
+
+- `feature-oracle.json`: observable end-to-end cases, all initially `failing` unless evidence already exists.
+- `progress-log.md`: current phase, active oracle item, clean-state note, blockers, and session log.
+- `agent-handoff.md`: planner, generator, and evaluator notes with the next handoff target.
+- `next-window-prompt.md`: copy-ready prompt for a fresh agent window.
+
+Feature-oracle rules:
+
+- Write cases as user/system behavior, not implementation chores.
+- Include `id`, `category`, `description`, `steps`, `status`, `evidence`, and optional `notes`.
+- Allow later coding agents to update only `status`, `evidence`, and `notes` unless the user changes scope.
+- Require evidence before `passing` or `waived`.
+- Keep blocked cases visible; do not delete them to make the roadmap look complete.
+
+## 4. Phase Map
 
 Create a baseline phase first unless the baseline is fresh and cited.
 
@@ -44,7 +61,7 @@ Split phases by risk profile:
 
 A phase is too broad when its validation requires unrelated environments or its edit paths cross many ownership boundaries.
 
-## 4. Feature Oracle
+## 5. Feature Oracle
 
 For non-trivial work, include acceptance cases as structured bullets or JSON-like tables:
 
@@ -58,11 +75,12 @@ For non-trivial work, include acceptance cases as structured bullets or JSON-lik
 
 The coding agent may update `status` and `evidence`; it should not delete cases without a waiver.
 
-## 5. Contract Writing
+## 6. Contract Writing
 
 Every phase must have:
 
 - Machine Contract JSON.
+- Runtime artifact paths.
 - Markdown Coding Agent Contract.
 - Observable requirements.
 - Test/regression gates.
@@ -73,7 +91,25 @@ Every phase must have:
 
 Keep `GOAL_PROMPT` executable: phase ID, phase file, repo path, constraints, gate classes, completion rule.
 
-## 6. Risk-Triggered Gates
+## 7. Agent Role Design
+
+Use the simplest useful agent structure:
+
+- Planner: expand rough intent into source packet, phase map, feature oracle, and contracts.
+- Generator: execute one phase and one oracle case, update evidence, and write the phase report.
+- Evaluator: independently inspect files, validation output, runtime behavior, and oracle evidence.
+
+For simple low-risk phases, a single agent can execute after objective validation. For broad, UI-heavy, AI/eval, migration, release, or ambiguous tasks, keep evaluator work independent and file-based.
+
+Before implementation begins, write or require a sprint/phase contract that names:
+
+- target feature-oracle item
+- expected files and paths
+- validation commands and runtime checks
+- acceptance and rejection criteria
+- evidence output
+
+## 8. Risk-Triggered Gates
 
 Require these gates when risk tags appear:
 
@@ -83,11 +119,11 @@ Require these gates when risk tags appear:
 | `auth`, `security` | Permission, session, rate-limit, enumeration, secret, and failure-mode checks. |
 | `payment` | Webhook, idempotency, test-mode, permission, audit, rollback, and no-real-charge checks. |
 | `database`, `migration` | Migration dry-run, rollback, idempotency, data cleanup, production approval. |
-| `ai`, `agent`, `llm`, `eval` | Golden questions, trace capture, source boundaries, refusal/privacy behavior, cost/quota checks. |
+| `ai`, `agent`, `llm`, `eval` | Golden questions, trace capture, tool/source boundaries, refusal/privacy behavior, cost/quota checks, evaluator handoff. |
 | `external-service` | Provider readiness, credentials boundary, dashboard action approval, offline/mock path. |
 | `release` | Build, smoke, deployment gate, monitoring/logging, rollback, known-blocker report. |
 
-## 7. Finalization
+## 9. Finalization
 
 Run:
 

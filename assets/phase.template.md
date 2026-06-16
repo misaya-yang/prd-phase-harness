@@ -38,6 +38,34 @@ The JSON block below is the authoritative machine-readable contract for goal-mod
 - EVIDENCE_OUTPUT: {{EVIDENCE_OUTPUT}}
 - STOP_CONDITIONS: {{STOP_CONDITIONS}}
 
+## Harness Runtime
+
+- FEATURE_ORACLE: `{{FEATURE_ORACLE_PATH}}`
+- LOOP_CONTRACT: `{{LOOP_CONTRACT_PATH}}`
+- LOOP_STATE: `{{LOOP_STATE_PATH}}`
+- PROGRESS_LOG: `{{PROGRESS_LOG_PATH}}`
+- AGENT_HANDOFF: `{{AGENT_HANDOFF_PATH}}`
+- NEXT_WINDOW_PROMPT: `{{NEXT_WINDOW_PROMPT_PATH}}`
+
+Session boot:
+
+1. Read the runtime artifacts above.
+2. Follow the loop contract: observe, select, execute, verify, record, decide.
+3. Run the target phase's baseline or smoke validation before implementation when available.
+4. Select one matching feature-oracle item and keep work scoped to that item and this phase.
+5. Update loop state, progress, and handoff files before exiting.
+
+## Feature Oracle Policy
+
+The feature oracle is the durable test list for long-running agents. Do not delete oracle cases to make completion easier. Update only `status`, `evidence`, and `notes` unless the user explicitly changes scope.
+
+Status rules:
+
+- `failing`: not implemented or not verified.
+- `passing`: end-to-end evidence exists.
+- `blocked`: a named dependency, credential, environment, or scope issue prevents completion.
+- `waived`: the user explicitly waived the case and remaining risk is documented.
+
 ## Task Spec
 
 {{TASK_SPEC}}

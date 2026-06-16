@@ -30,6 +30,16 @@ TODO: List files changed and why.
 | Compliance | TODO | TODO | TODO |
 | Acceptance | TODO | TODO | TODO |
 
+## Feature Oracle Updates
+
+| Feature ID | Old Status | New Status | Evidence |
+| --- | --- | --- | --- |
+| TODO | TODO | TODO | TODO |
+
+## Progress Log Update
+
+TODO: Summarize the entry appended to `progress-log.md`, including clean-state or blocker status.
+
 ## Screenshots, Logs, or Eval Tables
 
 TODO: Link screenshots, logs, traces, golden-question tables, migration notes, or other durable evidence.

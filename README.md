@@ -5,6 +5,9 @@ Agent-executable PRD phase harness skill for Codex, Claude Code, and other goal-
 This repository packages a portable skill that converts PRDs, Figma designs, rough feature requests, or existing roadmap docs into a cold-start execution folder:
 
 - `source-packet.md` for request facts, trust boundaries, assumptions, risks, and approvals
+- `loop-contract.json` and `loop-state.json` for the observe/select/execute/verify/record/decide control loop
+- `feature-oracle.json` for end-to-end feature/test cases that stay visible across sessions
+- `progress-log.md`, `agent-handoff.md`, and `next-window-prompt.md` for fresh-window recovery
 - `README.md` for folder-level operating protocol
 - `phase-manifest.md` for dependency flow, validation matrix, risk matrix, reports, and goal prompts
 - `phase-XX-*.md` files with machine-readable JSON contracts and grep-friendly coding-agent contracts
@@ -17,7 +20,7 @@ Long-running coding agents do not fail only because the model is weak. They fail
 A normal PRD says what the product should become. A Goal Harness says how a fresh agent should continue the work safely.
 
 ```text
-intent -> source packet -> phase map -> machine contract -> execution report -> dependency unlock
+intent -> source packet -> loop contract -> loop state -> feature oracle -> phase map -> machine contract -> runtime handoff -> execution report -> dependency unlock
 ```
 
 ## Install
@@ -35,7 +38,7 @@ For Claude Code or other Agent Skills-compatible workflows, keep `SKILL.md`, `re
 ## Use
 
 ```text
-Use $prd-phase-harness to convert this PRD, Figma design, rough feature request, or existing roadmap into an executable goal-mode harness with source packet, manifest, machine contracts, phase reports, validation gates, regression scope, and handoff rules.
+Use $prd-phase-harness to convert this PRD, Figma design, rough feature request, or existing roadmap into an executable long-running agent harness with source packet, loop contract, loop state, feature oracle, progress log, planner/generator/evaluator handoff, next-window prompt, manifest, machine contracts, phase reports, validation gates, regression scope, and unlock rules.
 ```
 
 ## Scaffold
@@ -50,11 +53,10 @@ python3 scripts/scaffold_harness_prd.py \
   --phase "Baseline Audit" \
   --phase "Core Model and API" \
   --phase "User Experience" \
-  --phase "Release Gates" \
-  --source-packet
+  --phase "Release Gates"
 ```
 
-The scaffold is a starter, not a finished harness. Replace placeholders with repo-specific facts and run strict validation.
+The scaffold is a starter, not a finished harness. It creates runtime artifacts by default. Replace placeholders with repo-specific facts and run strict validation.
 
 ## Validate
 
@@ -63,7 +65,7 @@ python3 scripts/validate_harness_prd.py docs/new_feature_harness --allow-placeho
 python3 scripts/validate_harness_prd.py docs/new_feature_harness --strict --quality-score
 ```
 
-The validator checks structure, JSON machine contracts, phase IDs, dependency order, report paths, command objects, risk-triggered gates, placeholders, and vague language.
+The validator checks structure, JSON machine contracts, runtime artifacts, loop cycle/state, feature-oracle evidence, phase IDs, dependency order, report paths, command objects, risk-triggered gates, placeholders, and vague language.
 
 ## Repository Layout
 
@@ -74,13 +76,17 @@ The validator checks structure, JSON machine contracts, phase IDs, dependency or
 │   └── openai.yaml
 ├── assets/
 │   ├── README.template.md
+│   ├── agent-handoff.template.md
+│   ├── next-window-prompt.template.md
 │   ├── phase-manifest.template.md
 │   ├── phase-report.template.md
 │   ├── phase.template.md
+│   ├── progress-log.template.md
 │   └── source-packet.template.md
 ├── references/
 │   ├── agent-adapters.md
 │   ├── builder-protocol.md
+│   ├── long-running-agent-protocol.md
 │   ├── phase-contract-schema.md
 │   ├── phase-folder-spec.md
 │   ├── phase-runner-protocol.md
@@ -96,6 +102,10 @@ The validator checks structure, JSON machine contracts, phase IDs, dependency or
 Every phase should be a cold-start executable unit with:
 
 - Machine Contract JSON
+- loop contract and loop state
+- feature oracle and progress log
+- planner/generator/evaluator handoff
+- copy-ready next-window prompt
 - `GOAL_PROMPT`
 - `READ_FIRST`
 - `PRIMARY_CONTEXT`
