@@ -54,6 +54,7 @@ loop_contract: path to loop-contract.json
 loop_state: path to loop-state.json
 progress_log: path to progress-log.md
 handoff: path to agent-handoff.md
+continuity_ledger: path to continuity-ledger.md
 next_window_prompt: path to next-window-prompt.md
 session_boot: object with read_progress, run_baseline_check, update_progress_before_exit booleans
 agent_roles: array containing planner, generator, evaluator when the harness supports independent review

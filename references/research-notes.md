@@ -34,7 +34,8 @@ Map the research concepts into docs like this:
 | Tool access | `VALIDATION_COMMANDS`, `BROWSER_CHECKS`, Figma/design inputs, migration commands |
 | Project memory | README assumptions, decisions, phase reports |
 | Task state | phase IDs, dependency flow, report status |
-| Fresh-window recovery | feature oracle, progress log, handoff packet, next-window prompt |
+| Fresh-window recovery | feature oracle, progress log, continuity ledger, handoff packet, next-window prompt |
+| Cross-phase relatedness | continuity ledger, source-packet code-summary writeback, phase report handoff |
 | Control loop | loop contract, loop state, observe/select/execute/verify/record/decide cycle |
 | Observability | screenshots, traces, logs, eval tables, command summaries |
 | Failure attribution | blocker notes, stop conditions, failed gate explanations |
@@ -73,6 +74,7 @@ For long-running coding work:
 - Ask the runner to run baseline/smoke checks before new work.
 - Use a separate evaluator when UI behavior, agent behavior, migration safety, release readiness, or subjective quality is part of completion.
 - Make the next-window prompt concrete enough that the next agent does not need the current chat.
+- Require agents to summarize inspected code facts back into durable files before handoff; otherwise phases drift into isolated PRDs instead of a connected execution chain.
 
 For a full PRD:
 

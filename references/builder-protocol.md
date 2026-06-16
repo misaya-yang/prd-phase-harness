@@ -37,6 +37,7 @@ Create the runtime artifacts before or alongside the phase map:
 - `feature-oracle.json`: observable end-to-end cases, all initially `failing` unless evidence already exists.
 - `progress-log.md`: current phase, active oracle item, clean-state note, blockers, and session log.
 - `agent-handoff.md`: planner, generator, and evaluator notes with the next handoff target.
+- `continuity-ledger.md`: phase-to-feature chain, dependency handoff boundary, code-summary writeback, and interface decisions.
 - `next-window-prompt.md`: copy-ready prompt for a fresh agent window.
 
 Feature-oracle rules:
@@ -105,6 +106,7 @@ Before implementation begins, write or require a sprint/phase contract that name
 
 - target feature-oracle item
 - expected files and paths
+- continuity ledger entry and source-packet code-summary writeback
 - validation commands and runtime checks
 - acceptance and rejection criteria
 - evidence output

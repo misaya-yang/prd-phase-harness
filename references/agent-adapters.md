@@ -26,7 +26,7 @@ Codex workflows often have:
 
 Generated phases should make browser checks and evidence outputs explicit so Codex can verify before completion.
 
-For long-running goals, generated `next-window-prompt.md` should be copy-ready for a new Codex window: include the skill name, docs path, target phase, loading order, one-phase rule, validation, evidence, and stop conditions.
+For long-running goals, generated `next-window-prompt.md` should be copy-ready for a new Codex window: include the skill name, docs path, target phase, target feature-oracle item, loading order, one-phase rule, continuity-ledger update, code-summary writeback, validation, evidence, and stop conditions.
 
 ## Claude Code Notes
 
@@ -40,7 +40,7 @@ Claude Code workflows often have:
 
 Generated phases should keep context bounded so a subagent can execute a phase without polluting the main session.
 
-For Claude Code, keep `feature-oracle.json`, `progress-log.md`, and `agent-handoff.md` small enough for fast fresh-window loading. Use subagents for evaluator passes when the phase is UI-heavy, AI/eval-heavy, release-sensitive, or broad.
+For Claude Code, keep `feature-oracle.json`, `progress-log.md`, `continuity-ledger.md`, and `agent-handoff.md` small enough for fast fresh-window loading. Use subagents for evaluator passes when the phase is UI-heavy, AI/eval-heavy, release-sensitive, or broad.
 
 ## Subagent Guidance
 

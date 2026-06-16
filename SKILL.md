@@ -1,6 +1,6 @@
 ---
 name: prd-phase-harness
-description: Use when creating, reviewing, repairing, or executing long-running agent harnesses and agent-executable PRD phase folders from PRDs, Figma designs, rough feature requests, existing codebases, roadmap docs, goal-mode coding work, or Codex/Claude Code handoffs. Produces source packets, loop contracts, loop state, feature oracles, progress logs, planner/generator/evaluator handoffs, next-window prompts, phase manifests, machine contracts, validation gates, and evidence reports.
+description: Use when creating, reviewing, repairing, or executing long-running agent harnesses and agent-executable PRD phase folders from PRDs, Figma designs, rough feature requests, existing codebases, roadmap docs, goal-mode coding work, or Codex/Claude Code handoffs. Produces source packets, loop contracts, loop state, feature oracles, progress logs, continuity ledgers, planner/generator/evaluator handoffs, next-window prompts, phase manifests, machine contracts, validation gates, and evidence reports.
 ---
 
 # PRD Phase Harness
@@ -12,7 +12,7 @@ Turn product intent into a cold-start executable harness for coding agents. The 
 Core invariant:
 
 ```text
-intent -> source packet -> loop contract -> loop state -> feature oracle -> phase map -> machine contract -> runtime handoff -> execution report -> dependency unlock
+intent -> source packet -> loop contract -> loop state -> feature oracle -> continuity ledger -> phase map -> machine contract -> runtime handoff -> execution report -> dependency unlock
 ```
 
 ## Mode Selector
@@ -39,7 +39,8 @@ Every finished harness must be:
 - Verifiable: validation commands, browser/runtime checks, regression scope, compliance gates, and acceptance gates are concrete.
 - Observable: phase completion writes reports, screenshots, logs, eval tables, traces, or blocker notes.
 - Loop-driven: agents follow `observe -> select -> execute -> verify -> record -> decide` instead of treating a prompt as the workflow.
-- Recoverable: `loop-contract.json`, `loop-state.json`, `feature-oracle.json`, `progress-log.md`, `agent-handoff.md`, and `next-window-prompt.md` let a fresh agent resume without hidden chat context.
+- Recoverable: `loop-contract.json`, `loop-state.json`, `feature-oracle.json`, `progress-log.md`, `agent-handoff.md`, `continuity-ledger.md`, and `next-window-prompt.md` let a fresh agent resume without hidden chat context.
+- Connected: every phase records what it inherits, what it unlocks, which feature-oracle item it owns, and which code/interface facts must be written back for the next agent.
 - Independently reviewable: planner, generator, and evaluator responsibilities are separated when task risk justifies the overhead.
 - Safe: untrusted inputs, secrets, destructive commands, external services, migrations, and deployment are gated.
 - Portable: instructions work when the skill lives under Codex, Claude Code, or another Agent Skills-compatible directory.
@@ -55,10 +56,11 @@ When building or repairing a harness:
 5. Create a feature oracle from observable behaviors. Mark all cases `failing` until evidence exists.
 6. Create a baseline/audit phase first unless a fresh baseline already exists.
 7. Split phases by dependency and risk profile: schema/API, UI, AI/eval, migration, external service, release.
-8. Write README, manifest, runtime artifacts, phase files, report template, and machine-readable phase contracts.
-9. Write a copy-ready `next-window-prompt.md` that names the docs path, target phase, loading order, loop cycle, edit boundaries, validation, and completion rule.
-10. Run scaffold or validator scripts from the skill directory, resolved relative to this `SKILL.md`; do not hardcode a user-specific path.
-11. Run strict validation before finalizing. Use placeholder mode only for unfinished scaffolds.
+8. Write README, manifest, runtime artifacts, phase files, report template, continuity ledger, and machine-readable phase contracts.
+9. Require each phase to summarize inspected code facts back into `source-packet.md` and `continuity-ledger.md` before handoff.
+10. Write a copy-ready `next-window-prompt.md` that names the docs path, target phase, target feature, loading order, loop cycle, edit boundaries, validation, and completion rule.
+11. Run scaffold or validator scripts from the skill directory, resolved relative to this `SKILL.md`; do not hardcode a user-specific path.
+12. Run strict validation before finalizing. Use placeholder mode only for unfinished scaffolds.
 
 For full detail, load `references/builder-protocol.md`.
 
@@ -140,7 +142,7 @@ python3 <skill-dir>/scripts/validate_harness_prd.py docs/new_feature_harness --s
 ## Resource Map
 
 - `references/builder-protocol.md`: intake, source packet, risk classifier, phase map, feature oracle.
-- `references/long-running-agent-protocol.md`: loop contract, loop state, session boot, feature oracle, progress log, planner/generator/evaluator loop, next-window prompts.
+- `references/long-running-agent-protocol.md`: loop contract, loop state, session boot, feature oracle, progress log, continuity ledger, planner/generator/evaluator loop, next-window prompts.
 - `references/phase-folder-spec.md`: folder, README, manifest, phase, report, and status schema.
 - `references/phase-contract-schema.md`: JSON contract fields and risk-triggered required gates.
 - `references/phase-runner-protocol.md`: goal-mode execution, report writing, blockers, dependency unlock.
@@ -160,8 +162,9 @@ Before claiming the harness is ready:
 - `python3 -m py_compile scripts/*.py` passes.
 - Scaffold smoke test passes validator with `--allow-placeholders`.
 - A filled harness passes validator with `--strict`.
-- Runtime files exist: `source-packet.md`, `loop-contract.json`, `loop-state.json`, `feature-oracle.json`, `progress-log.md`, `agent-handoff.md`, and `next-window-prompt.md`.
+- Runtime files exist: `source-packet.md`, `loop-contract.json`, `loop-state.json`, `feature-oracle.json`, `progress-log.md`, `agent-handoff.md`, `continuity-ledger.md`, and `next-window-prompt.md`.
 - Loop contract includes observe, select, execute, verify, record, and decide; loop state points to an existing phase and feature.
+- Each phase has cross-phase continuity and code-summary writeback instructions that name source packet, continuity ledger, report, oracle, progress log, and handoff updates.
 - Passing or waived feature-oracle items have evidence; agents are not instructed to delete cases to shrink scope.
 - The next-window prompt is copy-ready and points to the first executable phase or the requested target phase.
 - Broken harness fixtures fail for missing contract fields, dependency cycles, vague gates, bad paths, and placeholder leakage.

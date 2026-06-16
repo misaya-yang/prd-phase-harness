@@ -67,6 +67,7 @@ rg -n "ACCEPTANCE_GATES:" {{DOCS_PATH}}
 | Feature Oracle | `{{FEATURE_ORACLE_PATH}}` | Update only status, evidence, and notes for the feature being worked. |
 | Progress Log | `{{PROGRESS_LOG_PATH}}` | Append session start/end, validation, and blocker notes. |
 | Agent Handoff | `{{AGENT_HANDOFF_PATH}}` | Keep planner, generator, and evaluator notes file-based and brief. |
+| Continuity Ledger | `{{CONTINUITY_LEDGER_PATH}}` | Preserve phase relatedness, code-summary writeback, and interface boundary decisions. |
 | Next Window Prompt | `{{NEXT_WINDOW_PROMPT_PATH}}` | Use this to restart work in a fresh context window. |
 
 ## Agent Role Handoffs

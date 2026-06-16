@@ -46,6 +46,7 @@ The JSON block below is the authoritative machine-readable contract for goal-mod
 - PROGRESS_LOG: `{{PROGRESS_LOG_PATH}}`
 - AGENT_HANDOFF: `{{AGENT_HANDOFF_PATH}}`
 - NEXT_WINDOW_PROMPT: `{{NEXT_WINDOW_PROMPT_PATH}}`
+- CONTINUITY_LEDGER: `{{CONTINUITY_LEDGER_PATH}}`
 
 Session boot:
 
@@ -53,7 +54,8 @@ Session boot:
 2. Follow the loop contract: observe, select, execute, verify, record, decide.
 3. Run the target phase's baseline or smoke validation before implementation when available.
 4. Select one matching feature-oracle item and keep work scoped to that item and this phase.
-5. Update loop state, progress, and handoff files before exiting.
+5. Summarize inspected code facts and interface decisions back into the source packet and continuity ledger.
+6. Update loop state, progress, continuity, and handoff files before exiting.
 
 ## Feature Oracle Policy
 
@@ -69,6 +71,25 @@ Status rules:
 ## Task Spec
 
 {{TASK_SPEC}}
+
+## Cross-Phase Continuity
+
+- Depends on: {{DEPENDS_ON}}
+- Unlocks: {{UNLOCKS}}
+- Feature-oracle item: {{FEATURE_ID}}
+- Continuity ledger: `{{CONTINUITY_LEDGER_PATH}}`
+- Prior-phase evidence to inherit: {{PRIOR_PHASE_EVIDENCE}}
+- Boundary this phase must preserve for later phases: {{BOUNDARY_TO_PRESERVE}}
+- Handoff this phase must produce: {{PHASE_HANDOFF_OUTPUT}}
+
+## Code Summary Writeback
+
+Before claiming completion, inspect the code paths allowed by this phase and write back:
+
+- `source-packet.md`: summarize discovered files, services, routes, schemas, tests, commands, and runtime constraints.
+- `continuity-ledger.md`: record interface boundaries, dependency assumptions, changed contracts, and any downstream phase impact.
+- `agent-handoff.md`: state the next concrete action, active feature-oracle item, validation evidence, and blocker status.
+- Phase report: link validation output and the exact code-summary update.
 
 ## Problem Boundary
 

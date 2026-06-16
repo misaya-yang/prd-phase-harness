@@ -26,6 +26,7 @@ docs/<topic>/
 ├── feature-oracle.json
 ├── progress-log.md
 ├── agent-handoff.md
+├── continuity-ledger.md
 ├── next-window-prompt.md
 ├── phase-manifest.md
 ├── phase-00-<baseline-slug>.md
@@ -64,13 +65,13 @@ The loading protocol must tell an agent to:
 
 1. Open README.
 2. Open manifest.
-3. Open loop contract, loop state, feature oracle, progress log, handoff, and next-window prompt.
+3. Open loop contract, loop state, feature oracle, progress log, handoff, continuity ledger, and next-window prompt.
 4. Locate the target phase by `PHASE_ID`.
 5. Open only the target phase and `PRIMARY_CONTEXT`.
 6. Plan before editing.
 7. Stay inside `LIKELY_EDIT_PATHS`.
 8. Verify and write evidence before completion.
-9. Update progress, handoff, report, and oracle evidence before exit.
+9. Update progress, handoff, report, oracle evidence, source packet code facts, and continuity ledger before exit.
 10. Advance only after dependencies pass or are explicitly waived.
 
 ## phase-manifest.md Contract
@@ -157,6 +158,7 @@ Every phase file should be assignable as one standalone goal. Use this section o
     "loop_state": "docs/<topic>/loop-state.json",
     "progress_log": "docs/<topic>/progress-log.md",
     "handoff": "docs/<topic>/agent-handoff.md",
+    "continuity_ledger": "docs/<topic>/continuity-ledger.md",
     "next_window_prompt": "docs/<topic>/next-window-prompt.md",
     "session_boot": {
       "read_progress": true,

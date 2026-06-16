@@ -6,7 +6,7 @@ Use this when a user assigns one phase to execute.
 
 1. Open the folder `README.md`.
 2. Open `phase-manifest.md`.
-3. Open `loop-contract.json`, `loop-state.json`, `feature-oracle.json`, `progress-log.md`, `agent-handoff.md`, and `next-window-prompt.md`.
+3. Open `loop-contract.json`, `loop-state.json`, `feature-oracle.json`, `progress-log.md`, `agent-handoff.md`, `continuity-ledger.md`, and `next-window-prompt.md`.
 4. Open the target phase file.
 5. Parse the Machine Contract JSON.
 6. Confirm all `depends_on` phases are `passed` or explicitly `waived` by reports.
@@ -22,6 +22,7 @@ Before editing, produce a short plan that maps:
 - Files likely to change.
 - Validation command or browser/runtime check.
 - Evidence to write.
+- Code facts and interface boundaries to write back into `source-packet.md` and `continuity-ledger.md`.
 
 If the contract names `goal.plan_output`, write the plan there when the user's environment expects durable plans. Otherwise keep the plan in the agent's plan tool or response, then summarize it in the phase report.
 
@@ -33,7 +34,7 @@ Follow the loop contract while executing:
 2. Select exactly one phase and one oracle item.
 3. Execute only inside phase boundaries.
 4. Verify with required checks.
-5. Record evidence, progress, and handoff notes.
+5. Record evidence, progress, continuity-ledger updates, source-packet code facts, and handoff notes.
 6. Decide whether to continue, stop, block, or request evaluation.
 
 ## Execution Boundaries
@@ -81,6 +82,8 @@ Also update:
 - `loop-state.json`: active phase, active feature, iteration, status, last decision, and next action.
 - `progress-log.md`: session summary, validation, blocker, and clean-state notes.
 - `agent-handoff.md`: next role, next phase, and required evidence.
+- `continuity-ledger.md`: changed code facts, interface contracts, dependency assumptions, and downstream phase impact.
+- `source-packet.md`: discovered files, services, routes, schemas, tests, commands, and runtime constraints.
 - `next-window-prompt.md`: target phase if the next window should continue elsewhere.
 
 ## Unlock Rules

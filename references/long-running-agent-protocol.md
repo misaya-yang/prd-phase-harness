@@ -7,7 +7,7 @@ Use this when a harness must support multiple sessions, subagents, or independen
 A long-running coding harness should preserve state in files, not in chat memory:
 
 ```text
-source packet -> loop contract -> loop state -> feature oracle -> phase contract -> session boot -> one-feature execution -> evaluator review -> report -> handoff
+source packet -> loop contract -> loop state -> feature oracle -> continuity ledger -> phase contract -> session boot -> one-feature execution -> evaluator review -> report -> handoff
 ```
 
 This follows two practical findings from modern agent harness work:
@@ -25,6 +25,7 @@ This follows two practical findings from modern agent harness work:
 | `feature-oracle.json` | End-to-end feature and test cases. | Runners update only `status`, `evidence`, and `notes`. |
 | `progress-log.md` | Session history, current blocker, clean-state note. | Append at start/end of work. |
 | `agent-handoff.md` | Planner/generator/evaluator file-based messages. | Keep brief and actionable. |
+| `continuity-ledger.md` | Cross-phase relatedness, code-summary writeback, and interface boundary decisions. | Update when code facts, contracts, phase dependencies, or downstream assumptions change. |
 | `next-window-prompt.md` | Copy-ready fresh-window prompt. | Update when the active target phase changes. |
 
 ## Session Boot
@@ -32,12 +33,13 @@ This follows two practical findings from modern agent harness work:
 Every fresh agent should:
 
 1. Run `pwd` and confirm the repo root.
-2. Read README, manifest, loop contract, loop state, feature oracle, progress log, handoff, and target phase.
+2. Read README, manifest, loop contract, loop state, feature oracle, progress log, handoff, continuity ledger, and target phase.
 3. Read only target `PRIMARY_CONTEXT` before planning.
 4. Check recent git history when available.
 5. Run the baseline/smoke command named in the target phase before adding new work.
 6. Pick one phase and one feature-oracle item.
 7. Execute the loop cycle: observe, select, execute, verify, record, decide.
+8. Write inspected code facts and interface decisions back into `source-packet.md` and `continuity-ledger.md` before handoff.
 
 If baseline checks fail, fix or document that state before starting new feature work.
 
@@ -102,6 +104,15 @@ Use this loop when work is complex enough to justify more than one role:
 
 Keep role communication in `agent-handoff.md` or reports. Do not rely on hidden chat history.
 
+## Continuity Ledger
+
+Use `continuity-ledger.md` to keep all generated phase PRDs related instead of isolated:
+
+- Map each phase to its feature-oracle item, dependency, unlock target, handoff boundary, and required writeback.
+- Record code/interface facts that downstream phases inherit, including API contracts, state shape, routes, schemas, eval criteria, and rollback boundaries.
+- When code inspection changes a prior assumption, update the ledger and dependent phase handoff notes before continuing.
+- If a fresh agent cannot identify the next concrete action from the continuity ledger, progress log, and handoff, stop and write a blocker.
+
 ## Next-Window Prompt Requirements
 
 The prompt must name:
@@ -109,10 +120,12 @@ The prompt must name:
 - skill to use
 - repo or docs path
 - target phase ID and phase file
+- target feature-oracle item
 - loading order
 - one-phase and one-feature rule
 - loop cycle
 - edit boundaries
+- code-summary writeback and continuity-ledger update
 - validation and evidence requirements
 - stop conditions for credentials, production systems, destructive commands, and out-of-scope edits
 

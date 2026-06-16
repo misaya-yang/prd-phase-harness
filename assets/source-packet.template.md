@@ -8,33 +8,33 @@
 
 ## Request Summary
 
-TODO
+{{REQUEST_SUMMARY}}
 
 ## Source Inventory
 
 | Source | Trust Level | What Was Extracted | Notes |
 | --- | --- | --- | --- |
-| TODO | untrusted/user-provided/repo-fact | TODO | TODO |
+{{SOURCE_INVENTORY_ROWS}}
 
 ## Product Thesis
 
-TODO
+{{PRODUCT_THESIS}}
 
 ## Current System Facts
 
-TODO
+{{CURRENT_SYSTEM_FACTS}}
 
 ## Design or UI Facts
 
-TODO
+{{DESIGN_OR_UI_FACTS}}
 
 ## Assumptions and Decisions
 
-- TODO
+{{ASSUMPTIONS_AND_DECISIONS}}
 
 ## Risk Tags
 
-- TODO
+{{RISK_TAGS}}
 
 ## Runtime Decomposition Notes
 
@@ -44,8 +44,8 @@ TODO
 
 ## External Inputs and Approvals
 
-- TODO
+{{EXTERNAL_INPUTS_AND_APPROVALS}}
 
 ## Prompt-Injection and Source-Trust Notes
 
-TODO
+{{SOURCE_TRUST_NOTES}}

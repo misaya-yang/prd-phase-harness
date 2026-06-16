@@ -63,6 +63,7 @@ def write_minimal_harness(
             "loop_state": f"{docs_path}/loop-state.json",
             "progress_log": f"{docs_path}/progress-log.md",
             "handoff": f"{docs_path}/agent-handoff.md",
+            "continuity_ledger": f"{docs_path}/continuity-ledger.md",
             "next_window_prompt": f"{docs_path}/next-window-prompt.md",
             "session_boot": {
                 "read_progress": True,
@@ -75,6 +76,13 @@ def write_minimal_harness(
             "read_first": [
                 f"{docs_path}/README.md",
                 f"{docs_path}/phase-manifest.md",
+                f"{docs_path}/loop-contract.json",
+                f"{docs_path}/loop-state.json",
+                f"{docs_path}/feature-oracle.json",
+                f"{docs_path}/progress-log.md",
+                f"{docs_path}/agent-handoff.md",
+                f"{docs_path}/continuity-ledger.md",
+                f"{docs_path}/next-window-prompt.md",
                 f"{docs_path}/phase-00-baseline-audit.md",
             ],
             "primary_context": ["README.md", "scripts"],
@@ -241,7 +249,7 @@ Source facts come from repository files.
 
 ## Runtime Artifacts
 
-Feature oracle, progress log, handoff, and next-window prompt are required.
+Feature oracle, progress log, handoff, continuity ledger, and next-window prompt are required.
 
 ## Current System Shape
 
@@ -332,6 +340,7 @@ RT-00 Baseline Audit
 | Feature Oracle | `feature-oracle.json` | update evidence only |
 | Progress Log | `progress-log.md` | append session notes |
 | Agent Handoff | `agent-handoff.md` | keep role handoffs concise |
+| Continuity Ledger | `continuity-ledger.md` | preserve phase boundaries |
 | Next Window Prompt | `next-window-prompt.md` | restart fresh context |
 
 ## Agent Role Handoffs
@@ -396,6 +405,10 @@ Write the phase report before moving on.
         (folder / "loop-state.json").write_text(json.dumps(loop_state, indent=2), encoding="utf-8")
         (folder / "progress-log.md").write_text("# Progress Log\n\n- Baseline pending.\n", encoding="utf-8")
         (folder / "agent-handoff.md").write_text("# Agent Handoff\n\nNext agent: run RT-00.\n", encoding="utf-8")
+        (folder / "continuity-ledger.md").write_text(
+            "# Continuity Ledger\n\nRT-00 links RT-F001 to baseline evidence.\n",
+            encoding="utf-8",
+        )
         prompt = next_window_prompt or f"""# Next Window Prompt
 
 Use $prd-phase-harness to continue the harness at `{folder}`.
@@ -412,14 +425,16 @@ Loading order:
 5. Open `{folder}/feature-oracle.json`.
 6. Open `{folder}/progress-log.md`.
 7. Open `{folder}/agent-handoff.md`.
-8. Open the target phase file and its PRIMARY_CONTEXT.
+8. Open `{folder}/continuity-ledger.md`.
+9. Open the target phase file and its PRIMARY_CONTEXT.
 
 Execution rule:
 - Work on exactly one phase and one feature-oracle item.
 - Follow the loop cycle: observe, select, execute, verify, record, decide.
 - Stay inside the phase edit boundaries.
 - Run validation and runtime checks.
-- Update the phase report, progress log, handoff file, and oracle evidence before claiming completion.
+- Summarize code facts into the source packet and continuity ledger.
+- Update the phase report, progress log, handoff file, continuity ledger, and oracle evidence before claiming completion.
 
 Stop conditions:
 - Stop if credentials, production systems, destructive commands, or out-of-scope edits are required.
@@ -469,6 +484,7 @@ class HarnessRuntimeTests(unittest.TestCase):
                 "feature-oracle.json",
                 "progress-log.md",
                 "agent-handoff.md",
+                "continuity-ledger.md",
                 "next-window-prompt.md",
             ]:
                 self.assertTrue((output / name).exists(), name)
@@ -490,6 +506,7 @@ class HarnessRuntimeTests(unittest.TestCase):
             self.assertIn("Missing runtime file: feature-oracle.json", result.stdout)
             self.assertIn("Missing runtime file: progress-log.md", result.stdout)
             self.assertIn("Missing runtime file: agent-handoff.md", result.stdout)
+            self.assertIn("Missing runtime file: continuity-ledger.md", result.stdout)
             self.assertIn("Missing runtime file: next-window-prompt.md", result.stdout)
 
     def test_strict_validation_rejects_passing_oracle_without_evidence(self) -> None:

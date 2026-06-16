@@ -100,6 +100,7 @@ REQUIRED_JSON_PATHS = [
     ("runtime", "loop_state"),
     ("runtime", "progress_log"),
     ("runtime", "handoff"),
+    ("runtime", "continuity_ledger"),
     ("runtime", "next_window_prompt"),
     ("runtime", "session_boot"),
     ("runtime", "agent_roles"),
@@ -129,6 +130,7 @@ RUNTIME_FILES = [
     "feature-oracle.json",
     "progress-log.md",
     "agent-handoff.md",
+    "continuity-ledger.md",
     "next-window-prompt.md",
 ]
 
@@ -146,6 +148,8 @@ NEXT_WINDOW_PROMPT_REQUIREMENTS = {
     "edit boundaries": ["edit boundaries", "edit boundary", "stay inside", "read-only", "read only", "likely_edit_paths"],
     "validation": ["validation"],
     "evidence": ["evidence"],
+    "continuity ledger": ["continuity-ledger", "continuity ledger"],
+    "code summary writeback": ["source packet", "code facts", "code-summary", "summarize code"],
     "stop conditions": ["stop conditions", "stop if", "stop and document"],
 }
 
@@ -337,7 +341,7 @@ def validate_json_contract(
         warnings.append(f"{path.name} evidence.outputs does not appear to include reports/ or screenshots")
 
     if strict and not allow_placeholders:
-        for runtime_key in ["feature_oracle", "loop_contract", "loop_state", "progress_log", "handoff", "next_window_prompt"]:
+        for runtime_key in ["feature_oracle", "loop_contract", "loop_state", "progress_log", "handoff", "continuity_ledger", "next_window_prompt"]:
             runtime_path = runtime.get(runtime_key)
             if not is_non_empty_text(runtime_path, allow_placeholders=False):
                 errors.append(f"{path.name} runtime.{runtime_key} must name a concrete artifact path")
