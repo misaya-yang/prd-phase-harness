@@ -97,6 +97,29 @@ class SecondAgentQualityTests(unittest.TestCase):
         for snippet in required_snippets:
             self.assertIn(snippet, prompt)
 
+    def test_scaffold_uses_repo_validation_discovery_not_python_unit_default(self) -> None:
+        tmp, output = self.scaffold()
+        self.addCleanup(tmp.cleanup)
+
+        readme = read(output / "README.md")
+        phase = read(output / "phase-00-baseline-audit.md")
+        combined = readme + phase
+
+        self.assertNotIn("python3 -m unittest discover tests", combined)
+        self.assertIn("Starter validation discovery command", readme)
+        self.assertIn("This command is not completion evidence by itself", readme)
+        self.assertIn("VALIDATION_COMMANDS: rg --files", phase)
+        self.assertIn("Run `rg --files", phase)
+
+        match = re.search(r"## Machine Contract.*?```json\s*(.*?)\s*```", phase, re.DOTALL)
+        self.assertIsNotNone(match)
+        contract = json.loads(match.group(1))
+        command = contract["validation"]["commands"][0]
+        self.assertEqual(command["id"], "repo-validation-discovery")
+        self.assertTrue(command["command"].startswith("rg --files"))
+        self.assertIn("package.json", command["command"])
+        self.assertIn("baseline report records the concrete", command["expected"])
+
     def test_handoff_progress_and_loop_state_agree_on_active_work(self) -> None:
         tmp, output = self.scaffold()
         self.addCleanup(tmp.cleanup)
@@ -150,6 +173,41 @@ class SecondAgentQualityTests(unittest.TestCase):
         self.assertIn("| CR-02 | CR-F003 | CR-01 | none |", ledger)
         self.assertIn("Code Summary Writeback Rules", ledger)
         self.assertIn("Interface Boundary Ledger", ledger)
+
+    def test_scaffold_embeds_long_cycle_delivery_quality_gates(self) -> None:
+        tmp, output = self.scaffold()
+        self.addCleanup(tmp.cleanup)
+
+        readme = read(output / "README.md")
+        manifest = read(output / "phase-manifest.md")
+        handoff = read(output / "agent-handoff.md")
+        source_packet = read(output / "source-packet.md")
+        first_phase = read(output / "phase-00-baseline-audit.md")
+        final_phase = read(output / "phase-02-operator-review-ui.md")
+
+        for text in [readme, manifest, handoff, source_packet, final_phase]:
+            self.assertIn("whole-demand regression", text)
+            self.assertRegex(text, r"review evidence|Review evidence")
+
+        self.assertNotIn("whole-demand regression", first_phase)
+        self.assertIn("context compaction", readme)
+        self.assertIn("smallest requirement-satisfying change", readme)
+        self.assertIn("Requirements and Gate Map", source_packet)
+        self.assertIn("Delivery Quality Gates", manifest)
+        self.assertIn("minimal-change scope", handoff)
+
+        match = re.search(r"## Machine Contract.*?```json\s*(.*?)\s*```", final_phase, re.DOTALL)
+        self.assertIsNotNone(match)
+        contract = json.loads(match.group(1))
+        acceptance = " ".join(contract["validation"]["acceptance_gates"])
+        regression = " ".join(contract["validation"]["regression_scope"])
+        artifacts = " ".join(contract["evidence"]["required_artifacts"])
+        self.assertIn("whole-demand regression", acceptance)
+        self.assertIn("review checks requirement coverage", acceptance)
+        self.assertIn("context compaction", acceptance)
+        self.assertIn("whole-demand regression", regression)
+        self.assertIn("review evidence", artifacts)
+        self.assertIn("minimal-change scope note", artifacts)
 
 
 if __name__ == "__main__":

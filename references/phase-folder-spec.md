@@ -2,6 +2,23 @@
 
 Use this reference when writing or reviewing an agent-executable PRD phase folder.
 
+## Contents
+
+- [Design Principle](#design-principle)
+- [Folder Layout](#folder-layout)
+- [README.md Contract](#readmemd-contract)
+- [phase-manifest.md Contract](#phase-manifestmd-contract)
+- [Phase File Contract](#phase-file-contract)
+- [Status Model](#status-model)
+- [Phase Sizing](#phase-sizing)
+- [Requirement Rules](#requirement-rules)
+- [Verification Rules](#verification-rules)
+- [Minimal Change and Review Rules](#minimal-change-and-review-rules)
+- [Terminal Regression Rules](#terminal-regression-rules)
+- [Compliance and Safety Rules](#compliance-and-safety-rules)
+- [Evidence Rules](#evidence-rules)
+- [Review Checklist](#review-checklist)
+
 ## Design Principle
 
 A phase folder is a runtime harness for coding agents. It should answer:
@@ -319,6 +336,27 @@ Every phase should name the smallest credible verification set:
 - Build checks for release-sensitive work.
 
 If a command cannot run locally, the phase must require a blocker note explaining why and what evidence was still collected.
+
+## Minimal Change and Review Rules
+
+Every phase should name the smallest expected edit boundary and require review evidence before `passed`.
+
+The phase report should record:
+
+- Files changed and why those files were the smallest sufficient change.
+- Any scope expansion and the reason it was required.
+- Self-review or evaluator findings tied to requirements, tests, and regression impact.
+
+## Terminal Regression Rules
+
+The terminal phase or release gate must run whole-demand regression across completed feature-oracle items before the overall requirement is marked complete.
+
+If whole-demand regression cannot run, the terminal report must name:
+
+- The blocked command, browser path, eval, or runtime dependency.
+- Evidence already collected.
+- Residual risk.
+- Whether dependent release or handoff may proceed.
 
 ## Compliance and Safety Rules
 

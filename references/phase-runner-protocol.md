@@ -21,6 +21,7 @@ Before editing, produce a short plan that maps:
 - Requirement or gate.
 - Files likely to change.
 - Validation command or browser/runtime check.
+- Minimal-change boundary and review method.
 - Evidence to write.
 - Code facts and interface boundaries to write back into `source-packet.md` and `continuity-ledger.md`.
 
@@ -34,7 +35,7 @@ Follow the loop contract while executing:
 2. Select exactly one phase and one oracle item.
 3. Execute only inside phase boundaries.
 4. Verify with required checks.
-5. Record evidence, progress, continuity-ledger updates, source-packet code facts, and handoff notes.
+5. Record evidence, review notes, minimal-change scope, progress, continuity-ledger updates, source-packet code facts, and handoff notes.
 6. Decide whether to continue, stop, block, or request evaluation.
 
 ## Execution Boundaries
@@ -58,7 +59,9 @@ Run required checks in this order when applicable:
 3. Browser/runtime/user journey checks.
 4. AI/eval/golden-question checks.
 5. Migration/rollback/dry-run checks.
-6. Full build or release checks.
+6. Review of changed files, minimal-change scope, and requirement coverage.
+7. Full build or release checks.
+8. Terminal whole-demand regression when this is the final phase or release gate.
 
 If a required check cannot run, collect the non-blocked evidence and mark the check blocked in the report. Do not silently convert blocked into passed.
 
@@ -72,6 +75,8 @@ The report must include:
 - Plan followed.
 - Files changed.
 - Validation evidence table.
+- Minimal-change scope note.
+- Review evidence or evaluator findings.
 - Browser screenshots/logs/eval traces where applicable.
 - Blockers and deviations.
 - Handoff notes for the next phase.
@@ -95,6 +100,8 @@ A dependent phase may proceed only when:
 - The next phase's contract says it can proceed with a named blocker.
 
 Never infer unlock from "most tests passed."
+
+The full requirement may be considered complete only when the terminal phase or release gate records whole-demand regression over completed feature-oracle items, or records an explicit blocker or waiver.
 
 ## Stop Conditions
 

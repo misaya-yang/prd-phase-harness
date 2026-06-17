@@ -27,8 +27,13 @@ TODO: List files changed and why.
 | Validation | TODO | TODO | TODO |
 | Regression | TODO | TODO | TODO |
 | Browser/Runtime | TODO | TODO | TODO |
+| Review | TODO | TODO | TODO |
 | Compliance | TODO | TODO | TODO |
 | Acceptance | TODO | TODO | TODO |
+
+## Minimal Change and Review
+
+TODO: State why the changed files are the smallest sufficient change for this phase, and link the self-review or evaluator review notes.
 
 ## Feature Oracle Updates
 

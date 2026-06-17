@@ -28,14 +28,14 @@ rg -n "PHASE_ID: <ID>|GOAL_PROMPT|VALIDATION_COMMANDS|ACCEPTANCE_GATES" {{DOCS_P
 5. Open only the target phase file and files listed in that phase's `PRIMARY_CONTEXT`.
 6. Create a plan before editing.
 7. Treat `LIKELY_EDIT_PATHS` as the intended write boundary.
-8. Complete validation, browser/runtime checks, regression scope, compliance gates, rollback notes, evidence output, and acceptance gates before claiming completion.
+8. Complete validation, browser/runtime checks, regression scope, review, compliance gates, rollback notes, evidence output, and acceptance gates before claiming completion.
 9. Summarize code facts and boundary decisions back into `source-packet.md` and `continuity-ledger.md`.
 10. Update `progress-log.md`, `agent-handoff.md`, the phase report, and only the relevant feature `status`/`evidence` fields in `feature-oracle.json`.
 11. Move to the next phase only after dependency gates are met or explicitly waived in a report.
 
 ## Long-Running Runtime Protocol
 
-Each fresh session must start from durable files instead of hidden chat context:
+Each fresh session must start from durable files instead of hidden chat context or pre-compaction memory:
 
 - Read `{{PROGRESS_LOG_PATH}}` and recent git history before choosing work.
 - Follow `{{LOOP_CONTRACT_PATH}}`: observe, select, execute, verify, record, then decide whether to continue or stop.
@@ -43,6 +43,7 @@ Each fresh session must start from durable files instead of hidden chat context:
 - Update `{{CONTINUITY_LEDGER_PATH}}` when code facts, interfaces, contracts, or handoff boundaries change.
 - Run the baseline or smoke check named by the target phase before adding new changes.
 - Work on one phase and one feature-oracle item at a time.
+- Make the smallest requirement-satisfying change and record any scope expansion in the phase report.
 - Mark oracle items `passing` only when evidence points to a command, report, screenshot, trace, or log.
 - Leave the repo in a clean, restartable state or document the blocker in the phase report.
 
@@ -79,6 +80,14 @@ Each fresh session must start from durable files instead of hidden chat context:
 ## Roadmap Cohesion
 
 {{ROADMAP_COHESION}}
+
+## Delivery Quality Gates
+
+- Every phase must be executable and verifiable on its own.
+- Every phase must inherit prior evidence and record what it unlocks next.
+- Every implementation must include test evidence and review evidence or an explicit blocker.
+- The terminal phase or release gate must run whole-demand regression across completed feature-oracle items.
+- Runtime files must be current enough for a fresh agent to resume after context compaction.
 
 ## New Window Prompt
 

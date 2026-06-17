@@ -4,7 +4,7 @@ Use this when a harness must support multiple sessions, subagents, or independen
 
 ## Core Pattern
 
-A long-running coding harness should preserve state in files, not in chat memory:
+A long-running coding harness should preserve state in files, not in chat memory or pre-compaction context:
 
 ```text
 source packet -> loop contract -> loop state -> feature oracle -> continuity ledger -> phase contract -> session boot -> one-feature execution -> evaluator review -> report -> handoff
@@ -12,7 +12,7 @@ source packet -> loop contract -> loop state -> feature oracle -> continuity led
 
 This follows two practical findings from modern agent harness work:
 
-- A fresh agent needs a compact way to recover state, choose the next unit of work, and restart the environment.
+- A fresh agent needs a compact way to recover state after context compaction, choose the next unit of work, and restart the environment.
 - The agent doing the work should not be the only judge of whether the work is complete when the task is broad or high-risk.
 
 ## Required Runtime Files
@@ -39,7 +39,8 @@ Every fresh agent should:
 5. Run the baseline/smoke command named in the target phase before adding new work.
 6. Pick one phase and one feature-oracle item.
 7. Execute the loop cycle: observe, select, execute, verify, record, decide.
-8. Write inspected code facts and interface decisions back into `source-packet.md` and `continuity-ledger.md` before handoff.
+8. Make the smallest requirement-satisfying change, then write inspected code facts and interface decisions back into `source-packet.md` and `continuity-ledger.md` before handoff.
+9. Record test evidence, review evidence, and minimal-change scope before marking the phase passed.
 
 If baseline checks fail, fix or document that state before starting new feature work.
 
@@ -100,7 +101,8 @@ Use this loop when work is complex enough to justify more than one role:
 3. Evaluator reviews the proposed contract before implementation when the source is ambiguous or the risk is high.
 4. Generator implements one target item and writes evidence.
 5. Evaluator independently checks the runtime, changed files, report, and oracle status.
-6. Generator fixes evaluator findings or records a blocker.
+6. Evaluator checks minimal-change scope, test coverage, and regression impact.
+7. Generator fixes evaluator findings or records a blocker.
 
 Keep role communication in `agent-handoff.md` or reports. Do not rely on hidden chat history.
 
@@ -127,6 +129,8 @@ The prompt must name:
 - edit boundaries
 - code-summary writeback and continuity-ledger update
 - validation and evidence requirements
+- review/test evidence and minimal-change scope
+- terminal whole-demand regression when the final phase or release gate is assigned
 - stop conditions for credentials, production systems, destructive commands, and out-of-scope edits
 
 Avoid vague prompts like "continue from here." A good prompt lets a new window start without this conversation.

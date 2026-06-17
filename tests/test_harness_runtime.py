@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any, Callable
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,6 +23,19 @@ def run_cmd(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
+    )
+
+
+def update_phase_contract(phase_path: Path, update: Callable[[dict[str, Any]], None]) -> None:
+    text = phase_path.read_text(encoding="utf-8")
+    match = re.search(r"## Machine Contract.*?```json\s*(.*?)\s*```", text, re.DOTALL)
+    if not match:
+        raise AssertionError(f"Missing Machine Contract in {phase_path}")
+    contract = json.loads(match.group(1))
+    update(contract)
+    phase_path.write_text(
+        text[: match.start(1)] + json.dumps(contract, indent=2) + text[match.end(1) :],
+        encoding="utf-8",
     )
 
 
@@ -76,6 +91,7 @@ def write_minimal_harness(
             "read_first": [
                 f"{docs_path}/README.md",
                 f"{docs_path}/phase-manifest.md",
+                f"{docs_path}/source-packet.md",
                 f"{docs_path}/loop-contract.json",
                 f"{docs_path}/loop-state.json",
                 f"{docs_path}/feature-oracle.json",
@@ -120,14 +136,31 @@ def write_minimal_harness(
                 }
             ],
             "browser_checks": ["none for baseline"],
-            "regression_scope": ["existing validator behavior remains stable"],
+            "regression_scope": [
+                "existing validator behavior remains stable",
+                "terminal whole-demand regression covers completed feature-oracle items",
+            ],
             "compliance_gates": ["no secrets are read or written"],
-            "acceptance_gates": ["source packet and runtime files are present"],
+            "acceptance_gates": [
+                "source packet and runtime files are present",
+                "review evidence confirms requirement coverage",
+                "minimal-change scope note is recorded",
+                "whole-demand regression is recorded for terminal completion",
+            ],
             "rollback_plan": ["revert docs-only changes"],
         },
         "evidence": {
             "outputs": [f"{docs_path}/reports/rt-00-baseline-audit-report.md"],
-            "required_artifacts": ["phase report", "progress log entry"],
+            "required_artifacts": [
+                "phase report",
+                "progress log entry",
+                "feature-oracle evidence",
+                "continuity-ledger update",
+                "source-packet code summary",
+                "handoff update",
+                "review evidence",
+                "minimal-change scope note",
+            ],
             "waiver_policy": "Document waived gates with user, reason, risk, and dependent phase impact.",
             "next_phase_handoff": "Unlock only after the report states passed or waived.",
         },
@@ -156,7 +189,7 @@ def write_minimal_harness(
 
 - PHASE_ID: RT-00
 - GOAL_TARGET: Establish current system evidence before implementation.
-- GOAL_PROMPT: Complete RT-00 Baseline Audit for `.` by following `{docs_path}/phase-00-baseline-audit.md`; stay inside audit-only boundaries; finish only after validation, regression, compliance, rollback, evidence, and acceptance gates pass or blockers are documented.
+- GOAL_PROMPT: Complete RT-00 Baseline Audit for `.` by following `{docs_path}/phase-00-baseline-audit.md`; stay inside audit-only boundaries; finish only after validation, regression, review, compliance, rollback, evidence, and acceptance gates pass or blockers are documented.
 - DEPENDS_ON: none
 - READ_FIRST: `{docs_path}/README.md`, `{docs_path}/phase-manifest.md`, this file
 - PRIMARY_CONTEXT: README.md, scripts
@@ -165,10 +198,10 @@ def write_minimal_harness(
 - EXECUTION_MODE: plan-first; implement stepwise; verify before completion; write evidence before handoff
 - VALIDATION_COMMANDS: python3 -m unittest discover tests
 - BROWSER_CHECKS: none for baseline
-- REGRESSION_SCOPE: existing validator behavior remains stable
+- REGRESSION_SCOPE: existing validator behavior remains stable; terminal whole-demand regression covers completed feature-oracle items
 - COMPLIANCE_GATES: no secrets are read or written
 - ROLLBACK_PLAN: revert docs-only changes
-- ACCEPTANCE_GATES: source packet and runtime files are present
+- ACCEPTANCE_GATES: source packet and runtime files are present; review evidence confirms requirement coverage; minimal-change scope note is recorded; whole-demand regression is recorded for terminal completion
 - EVIDENCE_OUTPUT: `{docs_path}/reports/rt-00-baseline-audit-report.md`
 - STOP_CONDITIONS: credentials are required
 
@@ -201,7 +234,7 @@ Write evidence that future agents can load without hidden chat context.
 
 ## Test and Regression Requirements
 
-Run `python3 -m unittest discover tests`.
+Run `python3 -m unittest discover tests` and record review evidence, minimal-change scope, and terminal whole-demand regression.
 
 ## Compliance and Safety Requirements
 
@@ -558,6 +591,116 @@ class HarnessRuntimeTests(unittest.TestCase):
 
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("next-window-prompt.md missing required prompt content", result.stdout)
+
+    def test_strict_validation_rejects_phase_without_execution_load_order(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            phase_path = folder / "phase-00-baseline-audit.md"
+
+            def remove_load_files(contract: dict[str, object]) -> None:
+                read_first = contract["context"]["read_first"]  # type: ignore[index]
+                contract["context"]["read_first"] = [  # type: ignore[index]
+                    item
+                    for item in read_first
+                    if not str(item).endswith(("source-packet.md", "loop-state.json", "feature-oracle.json"))
+                ]
+
+            update_phase_contract(phase_path, remove_load_files)
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("phase-00-baseline-audit.md context.read_first missing execution file source-packet.md", result.stdout)
+            self.assertIn("phase-00-baseline-audit.md context.read_first missing execution file loop-state.json", result.stdout)
+            self.assertIn("phase-00-baseline-audit.md context.read_first missing execution file feature-oracle.json", result.stdout)
+
+    def test_strict_validation_rejects_phase_without_evidence_writeback_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            phase_path = folder / "phase-00-baseline-audit.md"
+
+            def remove_writeback_artifacts(contract: dict[str, object]) -> None:
+                required = contract["evidence"]["required_artifacts"]  # type: ignore[index]
+                contract["evidence"]["required_artifacts"] = [  # type: ignore[index]
+                    item
+                    for item in required
+                    if item not in {"feature-oracle evidence", "source-packet code summary", "handoff update"}
+                ]
+
+            update_phase_contract(phase_path, remove_writeback_artifacts)
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("phase-00-baseline-audit.md evidence.required_artifacts missing execution evidence: feature oracle", result.stdout)
+            self.assertIn("phase-00-baseline-audit.md evidence.required_artifacts missing execution evidence: source packet", result.stdout)
+            self.assertIn("phase-00-baseline-audit.md evidence.required_artifacts missing execution evidence: handoff", result.stdout)
+
+    def test_strict_validation_rejects_draft_phase_status(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            phase_path = folder / "phase-00-baseline-audit.md"
+            phase_path.write_text(
+                phase_path.read_text(encoding="utf-8").replace('"status": "ready"', '"status": "draft"'),
+                encoding="utf-8",
+            )
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("phase-00-baseline-audit.md strict validation requires phase.status other than draft", result.stdout)
+
+    def test_strict_validation_rejects_scaffold_discovery_as_only_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            phase_path = folder / "phase-00-baseline-audit.md"
+            phase_text = phase_path.read_text(encoding="utf-8")
+            phase_text = phase_text.replace('"id": "unit"', '"id": "repo-validation-discovery"')
+            phase_path.write_text(phase_text, encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("phase-00-baseline-audit.md strict validation requires concrete validation commands beyond scaffold discovery", result.stdout)
+
+    def test_strict_validation_rejects_missing_review_and_minimal_change_gates(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            phase_path = folder / "phase-00-baseline-audit.md"
+            phase_text = phase_path.read_text(encoding="utf-8")
+            phase_text = phase_text.replace("review evidence confirms requirement coverage", "phase evidence confirms requirement coverage")
+            phase_text = phase_text.replace('"review evidence",', '"phase evidence",')
+            phase_text = phase_text.replace("minimal-change scope note is recorded", "scope note is recorded")
+            phase_text = phase_text.replace('"minimal-change scope note",', '"scope note",')
+            phase_text = phase_text.replace("minimal-change", "scope")
+            phase_path.write_text(phase_text, encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("phase-00-baseline-audit.md missing review evidence gate", result.stdout)
+            self.assertIn("phase-00-baseline-audit.md missing minimal-change scope gate", result.stdout)
+
+    def test_strict_validation_rejects_terminal_phase_without_whole_demand_regression(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            phase_path = folder / "phase-00-baseline-audit.md"
+            phase_text = phase_path.read_text(encoding="utf-8")
+            phase_path.write_text(
+                phase_text.replace("whole-demand regression", "full coverage"),
+                encoding="utf-8",
+            )
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("phase-00-baseline-audit.md terminal phase missing whole-demand regression gate", result.stdout)
 
     def test_strict_validation_rejects_orphan_oracle_phase(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -183,6 +183,28 @@ RISK_GATE_RULES = {
     "security": ("validation", "compliance_gates"),
 }
 
+EXECUTION_READINESS_FILES = [
+    "README.md",
+    "phase-manifest.md",
+    "source-packet.md",
+    "loop-contract.json",
+    "loop-state.json",
+    "feature-oracle.json",
+    "progress-log.md",
+    "agent-handoff.md",
+    "continuity-ledger.md",
+    "next-window-prompt.md",
+]
+
+EXECUTION_EVIDENCE_TERMS = [
+    ("phase report", ["phase report"]),
+    ("progress log", ["progress log", "progress-log"]),
+    ("feature oracle", ["feature oracle", "feature-oracle", "oracle evidence"]),
+    ("continuity ledger", ["continuity ledger", "continuity-ledger"]),
+    ("source packet", ["source packet", "source-packet"]),
+    ("handoff", ["handoff"]),
+]
+
 
 def find_heading(text: str, heading: str) -> bool:
     return re.search(rf"^{re.escape(heading)}\s*$", text, re.MULTILINE) is not None
@@ -266,6 +288,11 @@ def contains_vague_language(value: Any) -> list[str]:
     return [pattern for pattern in VAGUE_PATTERNS if re.search(pattern, rendered)]
 
 
+def text_contains_any(text: str, alternatives: list[str]) -> bool:
+    lower = text.lower()
+    return any(alternative in lower for alternative in alternatives)
+
+
 def missing_next_window_prompt_content(text: str) -> list[str]:
     lower = text.lower()
     missing: list[str] = []
@@ -341,6 +368,49 @@ def validate_json_contract(
         warnings.append(f"{path.name} evidence.outputs does not appear to include reports/ or screenshots")
 
     if strict and not allow_placeholders:
+        status = str(phase.get("status", "")).lower()
+        if status == "draft":
+            errors.append(f"{path.name} strict validation requires phase.status other than draft")
+
+        if goal.get("plan_required") is not True:
+            errors.append(f"{path.name} strict validation requires goal.plan_required true")
+        plan_output = str(goal.get("plan_output", ""))
+        if "reports/" not in plan_output:
+            errors.append(f"{path.name} goal.plan_output must point to a reports/ artifact")
+        completion_report = str(goal.get("completion_report", ""))
+        if "reports/" not in completion_report:
+            errors.append(f"{path.name} goal.completion_report must point to a reports/ artifact")
+        if completion_report and not any(completion_report == str(output) for output in outputs):
+            errors.append(f"{path.name} evidence.outputs must include goal.completion_report")
+
+        read_first_text = textify(get_path(data, ("context", "read_first"))).lower()
+        phase_file_name = Path(str(phase.get("phase_file", path.name))).name
+        for required_file in [*EXECUTION_READINESS_FILES, phase_file_name]:
+            if required_file.lower() not in read_first_text:
+                errors.append(f"{path.name} context.read_first missing execution file {required_file}")
+        if not is_concrete_list(get_path(data, ("context", "primary_context")), allow_placeholders=False):
+            errors.append(f"{path.name} context.primary_context must be a non-empty concrete list")
+        if not is_concrete_list(get_path(data, ("boundaries", "likely_edit_paths")), allow_placeholders=False):
+            errors.append(f"{path.name} boundaries.likely_edit_paths must be a non-empty concrete list")
+        if not is_concrete_list(get_path(data, ("boundaries", "do_not_edit")), allow_placeholders=False):
+            errors.append(f"{path.name} boundaries.do_not_edit must be a non-empty concrete list")
+
+        if commands and not any(isinstance(command, dict) and command.get("required") is True for command in commands):
+            errors.append(f"{path.name} validation.commands must include at least one required command")
+        for index, command in enumerate(commands if isinstance(commands, list) else []):
+            if not isinstance(command, dict):
+                continue
+            for key in ["cwd", "command", "expected"]:
+                if not is_non_empty_text(str(command.get(key, "")), allow_placeholders=False):
+                    errors.append(f"{path.name} validation.commands[{index}].{key} must be concrete")
+
+        required_artifact_text = textify(get_path(data, ("evidence", "required_artifacts"))).lower()
+        for label, alternatives in EXECUTION_EVIDENCE_TERMS:
+            if not text_contains_any(required_artifact_text, alternatives):
+                errors.append(f"{path.name} evidence.required_artifacts missing execution evidence: {label}")
+        if not is_non_empty_text(str(get_path(data, ("evidence", "next_phase_handoff"))), allow_placeholders=False):
+            errors.append(f"{path.name} evidence.next_phase_handoff must be concrete")
+
         for runtime_key in ["feature_oracle", "loop_contract", "loop_state", "progress_log", "handoff", "continuity_ledger", "next_window_prompt"]:
             runtime_path = runtime.get(runtime_key)
             if not is_non_empty_text(runtime_path, allow_placeholders=False):
@@ -372,6 +442,27 @@ def validate_json_contract(
                 errors.append(
                     f"{path.name} risk tag '{tag}' requires concrete {'.'.join(required_path)}"
                 )
+
+        if commands and all(
+            isinstance(command, dict) and command.get("id") == "repo-validation-discovery"
+            for command in commands
+        ):
+            errors.append(f"{path.name} strict validation requires concrete validation commands beyond scaffold discovery")
+
+        quality_gate_text = " ".join(
+            textify(value).lower()
+            for value in [
+                validation.get("regression_scope"),
+                validation.get("acceptance_gates"),
+                get_path(data, ("evidence", "required_artifacts")),
+            ]
+        )
+        if "review" not in quality_gate_text:
+            errors.append(f"{path.name} missing review evidence gate")
+        if "minimal-change" not in quality_gate_text and "minimal change" not in quality_gate_text:
+            errors.append(f"{path.name} missing minimal-change scope gate")
+        if not as_list(phase.get("unlocks")) and "whole-demand regression" not in quality_gate_text:
+            errors.append(f"{path.name} terminal phase missing whole-demand regression gate")
 
     return errors, warnings, data
 

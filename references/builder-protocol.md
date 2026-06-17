@@ -21,6 +21,7 @@ Ask only for blocking unknowns. If a reasonable safe assumption exists, write th
 Build a durable evidence packet before phase design. Include:
 
 - Request summary and product thesis.
+- Detailed requirements, non-goals, and acceptance gates.
 - Source inventory: PRD, Figma, screenshots, repo docs, code paths, external docs.
 - Current system shape: architecture, routes, data model, tests, scripts, deployment.
 - Assumptions and decisions.
@@ -62,6 +63,13 @@ Split phases by risk profile:
 
 A phase is too broad when its validation requires unrelated environments or its edit paths cross many ownership boundaries.
 
+Phase map rules:
+
+- Each phase must be independently executable and independently verifiable.
+- Each phase must name what it inherits, what it unlocks, and which feature-oracle item it owns.
+- Each phase must prefer the smallest requirement-satisfying edit boundary.
+- The terminal phase or release gate must run whole-demand regression across completed feature-oracle items before the full requirement is complete.
+
 ## 5. Feature Oracle
 
 For non-trivial work, include acceptance cases as structured bullets or JSON-like tables:
@@ -85,6 +93,7 @@ Every phase must have:
 - Markdown Coding Agent Contract.
 - Observable requirements.
 - Test/regression gates.
+- Review gates and minimal-change scope notes.
 - Compliance/safety gates.
 - Rollback and recovery notes.
 - Evidence output.
@@ -108,6 +117,7 @@ Before implementation begins, write or require a sprint/phase contract that name
 - expected files and paths
 - continuity ledger entry and source-packet code-summary writeback
 - validation commands and runtime checks
+- review and minimal-change acceptance gates
 - acceptance and rejection criteria
 - evidence output
 

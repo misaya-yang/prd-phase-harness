@@ -112,6 +112,7 @@ rollback_plan: array
 ```
 
 Commands should be deterministic and scoped. Avoid `run tests` without a concrete command.
+Acceptance gates should include review evidence and minimal-change scope when implementation changes files. Terminal phases or release gates should include whole-demand regression across completed feature-oracle items.
 
 ## `evidence`
 
@@ -121,6 +122,8 @@ required_artifacts: artifact classes that must exist before completion
 waiver_policy: how skipped gates are documented
 next_phase_handoff: what unlocks or blocks dependent phases
 ```
+
+Required artifacts should include test evidence, review evidence, and minimal-change scope notes for implementation phases.
 
 ## Risk-Triggered Requirements
 

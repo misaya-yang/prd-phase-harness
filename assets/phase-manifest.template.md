@@ -77,6 +77,15 @@ rg -n "ACCEPTANCE_GATES:" {{DOCS_PATH}}
 - Evaluator role: review from files and runtime checks, reject superficial completion, and write actionable findings.
 - For small low-risk phases, one agent may play generator and evaluator only after running objective validation commands.
 
+## Delivery Quality Gates
+
+- Each phase is independently executable and verifiable.
+- Each phase records inherited evidence, dependency status, and what it unlocks next.
+- Each phase uses the smallest requirement-satisfying change; scope expansion must be justified in the report.
+- Each phase records test evidence and review evidence, or a blocker.
+- The terminal phase or release gate runs whole-demand regression across completed feature-oracle items.
+- Runtime files must be sufficient for a fresh agent to resume after context compaction.
+
 ## Goal Setup Templates
 
 Use the exact phase file `GOAL_PROMPT` when creating an agent goal. If a phase has dependencies, do not execute it until dependency acceptance gates are met or explicitly waived in the previous phase report.
