@@ -95,10 +95,9 @@ def phase_validation_summary(index: int) -> str:
 
 def phase_primary_context(docs_path: str) -> list[str]:
     return [
-        f"{docs_path}/README.md",
-        f"{docs_path}/source-packet.md",
-        f"{docs_path}/continuity-ledger.md",
-        "repo files confirmed by baseline code inspection",
+        f"{docs_path}/context-profile.json#roles.actor.primary_context",
+        "target phase file",
+        "repo paths named by the current phase contract",
     ]
 
 
@@ -186,6 +185,7 @@ def phase_contract(
     phase_file = f"{docs_path}/{phase['file']}"
     report = f"{docs_path}/{phase['report']}"
     feature_oracle = f"{docs_path}/feature-oracle.json"
+    context_profile = f"{docs_path}/context-profile.json"
     loop_contract = f"{docs_path}/loop-contract.json"
     loop_state = f"{docs_path}/loop-state.json"
     progress_log = f"{docs_path}/progress-log.md"
@@ -223,6 +223,7 @@ def phase_contract(
             "completion_report": report,
         },
         "runtime": {
+            "context_profile": context_profile,
             "feature_oracle": feature_oracle,
             "loop_contract": loop_contract,
             "loop_state": loop_state,
@@ -239,24 +240,24 @@ def phase_contract(
         },
         "context": {
             "read_first": [
-                f"{docs_path}/README.md",
-                f"{docs_path}/phase-manifest.md",
-                f"{docs_path}/source-packet.md",
-                loop_contract,
+                context_profile,
                 loop_state,
-                feature_oracle,
-                progress_log,
-                agent_handoff,
-                continuity_ledger,
-                next_window_prompt,
                 phase_file,
             ],
             "primary_context": phase_primary_context(docs_path),
             "context_budget": "focused",
             "do_not_load_unless": [
-                "external dashboards",
-                "production environments",
-                "unrelated modules not named by the phase contract",
+                f"{docs_path}/README.md only when the harness intent is unclear",
+                f"{docs_path}/phase-manifest.md only when the target phase file is unknown",
+                f"{docs_path}/source-packet.md only for targeted code fact lookup or writeback",
+                f"{docs_path}/loop-contract.json only when loop semantics are unclear",
+                f"{docs_path}/feature-oracle.json only for the selected feature item",
+                f"{docs_path}/progress-log.md only for recent blocker or status history",
+                f"{docs_path}/agent-handoff.md only when next action is unclear",
+                f"{docs_path}/continuity-ledger.md only for dependency boundary lookup or writeback",
+                f"{docs_path}/next-window-prompt.md only when preparing a new window",
+                "external dashboards only after approval",
+                "production environments only after approval",
             ],
         },
         "boundaries": {
@@ -407,6 +408,7 @@ def main() -> int:
     source_packet_path = output / "source-packet.md"
     continuity_ledger_path = output / "continuity-ledger.md"
     runtime_paths = [
+        output / "context-profile.json",
         output / "loop-contract.json",
         output / "loop-state.json",
         output / "feature-oracle.json",
@@ -478,6 +480,7 @@ def main() -> int:
             "CURRENT_SHAPE": "Repository structure and runtime commands are not yet confirmed. The baseline phase must inspect the codebase and write concrete files, services, routes, schemas, tests, and commands back into `source-packet.md` and `continuity-ledger.md` before implementation phases proceed.",
             "ASSUMPTIONS_AND_DECISIONS": "- The phase order is the initial dependency chain.\n- Baseline evidence unlocks implementation only after code facts and validation commands are written back.\n- A phase that cannot identify concrete code boundaries must stop and record a blocker instead of guessing.",
             "PHASE_ORDER_ROWS": phase_order_rows,
+            "CONTEXT_PROFILE_PATH": f"{docs_path}/context-profile.json",
             "LOOP_CONTRACT_PATH": f"{docs_path}/loop-contract.json",
             "LOOP_STATE_PATH": f"{docs_path}/loop-state.json",
             "FEATURE_ORACLE_PATH": f"{docs_path}/feature-oracle.json",
@@ -505,6 +508,7 @@ def main() -> int:
             "DEPENDENCY_FLOW": dependency_flow,
             "VALIDATION_MATRIX_ROWS": validation_matrix_rows,
             "RISK_MATRIX_ROWS": risk_matrix_rows,
+            "CONTEXT_PROFILE_PATH": f"{docs_path}/context-profile.json",
             "LOOP_CONTRACT_PATH": f"{docs_path}/loop-contract.json",
             "LOOP_STATE_PATH": f"{docs_path}/loop-state.json",
             "FEATURE_ORACLE_PATH": f"{docs_path}/feature-oracle.json",
@@ -540,6 +544,93 @@ def main() -> int:
             },
         )
         source_packet_path.write_text(source_packet, encoding="utf-8")
+
+    context_profile = {
+        "schema_version": "prd-phase-harness/context-profile/v1",
+        "strategy": "progressive disclosure: load the hot path first, then open deferred artifacts only when their trigger is met.",
+        "caps": {
+            "cold_start_max_files": 3,
+            "read_first_max_files": 4,
+            "primary_context_max_items": 4,
+        },
+        "cold_start": {
+            "required_files": [
+                f"{docs_path}/context-profile.json",
+                f"{docs_path}/loop-state.json",
+                "target phase file named by the assignment or loop-state.active_phase",
+            ],
+            "fallback_files": [
+                f"{docs_path}/phase-manifest.md only when the target phase file is unknown",
+                f"{docs_path}/README.md only when the harness intent is unclear",
+            ],
+            "rule": "Do not load the full docs folder or every runtime artifact during cold start.",
+        },
+        "roles": {
+            "actor": {
+                "required_files": [
+                    f"{docs_path}/context-profile.json",
+                    f"{docs_path}/loop-state.json",
+                    "target phase file",
+                ],
+                "primary_context": [
+                    "repo paths named by the target phase contract",
+                    "selected source slice named by context triggers",
+                ],
+                "defer": [
+                    f"{docs_path}/source-packet.md",
+                    f"{docs_path}/continuity-ledger.md",
+                    f"{docs_path}/feature-oracle.json",
+                    f"{docs_path}/progress-log.md",
+                    f"{docs_path}/agent-handoff.md",
+                ],
+            },
+            "critic": {
+                "required_files": [
+                    "actor report",
+                    "critic-verdict template",
+                    "target phase file",
+                ],
+                "primary_context": [
+                    "changed files or diff",
+                    "validation evidence cited by actor report",
+                ],
+                "defer": [
+                    f"{docs_path}/README.md",
+                    f"{docs_path}/source-packet.md",
+                    f"{docs_path}/continuity-ledger.md",
+                ],
+            },
+            "builder": {
+                "required_files": [
+                    f"{docs_path}/README.md",
+                    f"{docs_path}/phase-manifest.md",
+                    f"{docs_path}/source-packet.md",
+                ],
+                "rule": "Builder/repair mode may load broad context; actor and critic modes may not.",
+            },
+        },
+        "deferred": {
+            "README.md": "do not load by default; open only when the phase intent or global rule is unclear",
+            "phase-manifest.md": "do not load by default; open only when the target phase file or dependency order is unknown",
+            "source-packet.md": "do not load by default; open only named sections for code fact lookup or writeback",
+            "loop-contract.json": "do not load by default; open only if the loop cycle is unclear",
+            "feature-oracle.json": "do not load whole file by default; inspect only the selected feature item",
+            "progress-log.md": "do not load whole file by default; inspect only recent entries when blockers or status are unclear",
+            "agent-handoff.md": "do not load by default; open only when next action or role handoff is unclear",
+            "continuity-ledger.md": "do not load whole file by default; open only dependency boundary rows needed for the target phase or writeback",
+            "next-window-prompt.md": "do not load by default; open only when preparing the next context window",
+        },
+        "forbidden": [
+            "do not load the full docs folder",
+            "do not load all phase reports",
+            "do not load full source-packet.md when a named section or slice is enough",
+            "do not load unrelated repo modules not named by the phase contract",
+        ],
+    }
+    (output / "context-profile.json").write_text(
+        json.dumps(context_profile, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     loop_contract = {
         "schema_version": "prd-phase-harness/loop-contract/v1",
@@ -665,6 +756,7 @@ def main() -> int:
         {
             "TITLE": args.title,
             "DOCS_PATH": docs_path,
+            "CONTEXT_PROFILE_PATH": f"{docs_path}/context-profile.json",
             "FIRST_PHASE_ID": first["id"],
             "FIRST_PHASE_FILE": f"{docs_path}/{first['file']}",
             "FIRST_FEATURE_ID": first_feature,
@@ -712,16 +804,16 @@ def main() -> int:
         )
         if phase["depends_on"] == "none":
             context_policy = (
-                "- Start with this phase file, `source-packet.md`, and `continuity-ledger.md`.\n"
+                "- Start with `context-profile.json`, `loop-state.json`, and this phase file.\n"
                 "- Inspect the repository to establish baseline code facts before unlocking implementation phases.\n"
-                "- Expand repo context only to paths you record back into the source packet."
+                "- Open `source-packet.md` and `continuity-ledger.md` only for targeted writeback after inspection."
             )
             prior_phase_evidence = "no prior phase; establish baseline evidence for dependent phases"
         else:
             context_policy = (
-                f"- Start with this phase file, `source-packet.md`, `continuity-ledger.md`, and the {phase['depends_on']} phase report.\n"
-                "- Confirm inherited code facts and boundaries before editing.\n"
-                "- Expand repo context only to paths you record back into the source packet."
+                "- Start with `context-profile.json`, `loop-state.json`, and this phase file.\n"
+                f"- Open only the {phase['depends_on']} report summary or continuity row needed to confirm inherited boundaries.\n"
+                "- Open `source-packet.md` and `continuity-ledger.md` only for targeted lookup or writeback."
             )
             prior_phase_evidence = (
                 f"the {phase['depends_on']} phase report, progress-log entry, oracle evidence, and continuity-ledger boundary notes"
@@ -746,7 +838,7 @@ def main() -> int:
                 "PHASE_NUMBER": phase["number"],
                 "PHASE_NAME": phase["name"],
                 "GOAL": goal_target,
-                "ARCHITECTURE": "This phase inherits code facts from `source-packet.md`, boundary decisions from `continuity-ledger.md`, and prior evidence from the dependency phase report.",
+                "ARCHITECTURE": "This phase inherits code facts and boundary decisions through `context-profile.json` triggers, targeted `source-packet.md` sections, targeted `continuity-ledger.md` rows, and prior evidence from the dependency phase report.",
                 "TECH_STACK": "Repository stack is not assumed by the scaffold; confirm concrete frameworks, services, commands, and tests during baseline code inspection.",
                 "PHASE_CONTRACT_JSON": contract_json,
                 "PHASE_ID": phase["id"],
@@ -758,6 +850,7 @@ def main() -> int:
                 "UNLOCKS": unlocks,
                 "DOCS_PATH": docs_path,
                 "LOOP_CONTRACT_PATH": f"{docs_path}/loop-contract.json",
+                "CONTEXT_PROFILE_PATH": f"{docs_path}/context-profile.json",
                 "LOOP_STATE_PATH": f"{docs_path}/loop-state.json",
                 "PRIMARY_CONTEXT": ", ".join(phase_primary_context(docs_path)),
                 "LIKELY_EDIT_PATHS": ", ".join(phase_edit_paths(docs_path)),
@@ -790,7 +883,7 @@ def main() -> int:
                 "ROLLBACK_AND_RECOVERY": "Revert phase-scoped code changes, restore runtime docs from git, and mark the oracle item blocked if validation cannot be recovered.",
                 "EXECUTION_CAPTURE": "Write the phase report, append progress-log evidence, update oracle evidence, update continuity-ledger boundaries, and refresh agent-handoff next action.",
                 "REPORT_TEMPLATE": f"`{docs_path}/reports/phase-report-template.md`",
-                "EVALUATOR_PROTOCOL": "Reject completion if evidence is missing, tests or review are absent, code facts were not written back, continuity boundaries are stale, scope expansion lacks justification, or the phase tries to unlock dependent work without a report.",
+                "CRITIC_PROTOCOL": "Reject completion if evidence is missing, tests or critic review are absent, code facts were not written back, continuity boundaries are stale, scope expansion lacks justification, or the phase tries to unlock dependent work without a report.",
                 "ACCEPTANCE_CRITERIA": acceptance_criteria,
                 "RISKS": "- Phase isolation can break if downstream boundary changes are not recorded.\n- Implementation can drift if code summaries stay stale.\n- Long-running agents can repeat work if handoff evidence is incomplete.",
             },
@@ -804,7 +897,7 @@ def main() -> int:
         print(f"Critic template: {critic_template_path}")
     if source_packet_enabled:
         print(f"Source packet: {source_packet_path}")
-    print("Runtime artifacts: loop-contract.json, loop-state.json, feature-oracle.json, progress-log.md, agent-handoff.md, continuity-ledger.md, next-window-prompt.md")
+    print("Runtime artifacts: context-profile.json, loop-contract.json, loop-state.json, feature-oracle.json, progress-log.md, agent-handoff.md, continuity-ledger.md, next-window-prompt.md")
     return 0
 
 

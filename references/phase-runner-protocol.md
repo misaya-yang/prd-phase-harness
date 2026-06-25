@@ -4,15 +4,16 @@ Use this when a user assigns one phase to execute.
 
 ## Cold Start
 
-1. Open the folder `README.md`.
-2. Open `phase-manifest.md`.
-3. Open `loop-contract.json`, `loop-state.json`, `feature-oracle.json`, `progress-log.md`, `agent-handoff.md`, `continuity-ledger.md`, and `next-window-prompt.md`.
-4. Open the target phase file.
-5. Parse the Machine Contract JSON.
-6. Confirm all `depends_on` phases are `passed` or explicitly `waived` by reports.
-7. Open only `read_first` and `primary_context` before planning.
+1. Open `context-profile.json`.
+2. Open `loop-state.json`.
+3. Open the assigned target phase file. If the target is unknown, use `phase-manifest.md` only to locate it.
+4. Parse the Machine Contract JSON.
+5. Confirm all `depends_on` phases are `passed` or explicitly `waived` by reports, opening only the dependency report rows named by `context-profile.json`.
+6. Open only hot-path `read_first` and `primary_context` before planning.
+7. Defer README, full source packet, full feature oracle, progress log, handoff, continuity ledger, prior reports, and next-window prompt until their trigger applies.
 
 Do not load the full docs folder unless the phase contract says to.
+Do not load every runtime artifact by default; the context profile is the load budget.
 
 ## Plan First
 
@@ -23,7 +24,7 @@ Before editing, produce a short plan that maps:
 - Validation command or browser/runtime check.
 - Minimal-change boundary and review method.
 - Evidence to write.
-- Code facts and interface boundaries to write back into `source-packet.md` and `continuity-ledger.md`.
+- Code facts and interface boundaries to write back into targeted `source-packet.md` and `continuity-ledger.md` sections.
 
 If the contract names `goal.plan_output`, write the plan there when the user's environment expects durable plans. Otherwise keep the plan in the agent's plan tool or response, then summarize it in the phase report.
 
@@ -35,7 +36,7 @@ Follow the loop contract while executing:
 2. Select exactly one phase and one oracle item.
 3. Execute only inside phase boundaries.
 4. Verify with required checks.
-5. Record evidence, review notes, minimal-change scope, progress, continuity-ledger updates, source-packet code facts, and handoff notes.
+5. Record evidence, review notes, minimal-change scope, progress, continuity-ledger updates, source-packet code facts, and handoff notes through targeted writes, not full-context reloads.
 6. Decide whether to continue, stop, block, or request evaluation.
 
 ## Execution Boundaries

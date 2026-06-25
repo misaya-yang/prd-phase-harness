@@ -37,6 +37,7 @@ A phase folder is a runtime harness for coding agents. It should answer:
 ```text
 docs/<topic>/
 ├── README.md
+├── context-profile.json
 ├── source-packet.md
 ├── loop-contract.json
 ├── loop-state.json
@@ -78,13 +79,13 @@ Required sections:
 - External Inputs and Approvals
 - New Window Prompt
 
-The loading protocol must tell an agent to:
+The loading protocol must tell an agent to minimize context:
 
-1. Open README.
-2. Open manifest.
-3. Open loop contract, loop state, feature oracle, progress log, handoff, continuity ledger, and next-window prompt.
-4. Locate the target phase by `PHASE_ID`.
-5. Open only the target phase and `PRIMARY_CONTEXT`.
+1. Open `context-profile.json`.
+2. Open `loop-state.json`.
+3. Open the assigned target phase file, or use manifest only when the target is unknown.
+4. Open only hot-path `PRIMARY_CONTEXT`.
+5. Keep README, source packet, oracle, progress, handoff, continuity ledger, prior reports, and next-window prompt deferred until `context-profile.json` says the trigger applies.
 6. Plan before editing.
 7. Stay inside `LIKELY_EDIT_PATHS`.
 8. Verify and write evidence before completion.
@@ -149,7 +150,7 @@ Every phase file should be assignable as one standalone goal. Use this section o
 ```json
 {
   "schema_version": "prd-phase-harness/v3",
-  "harness_role": "execution",
+    "harness_role": "execution",
   "phase": {
     "id": "<PREFIX-XX>",
     "number": "XX",
@@ -170,6 +171,7 @@ Every phase file should be assignable as one standalone goal. Use this section o
     "completion_report": "docs/<topic>/reports/<phase-id>-report.md"
   },
   "runtime": {
+    "context_profile": "docs/<topic>/context-profile.json",
     "feature_oracle": "docs/<topic>/feature-oracle.json",
     "loop_contract": "docs/<topic>/loop-contract.json",
     "loop_state": "docs/<topic>/loop-state.json",
@@ -185,10 +187,10 @@ Every phase file should be assignable as one standalone goal. Use this section o
     "agent_roles": ["planner", "generator", "critic"]
   },
   "context": {
-    "read_first": [],
+    "read_first": ["docs/<topic>/context-profile.json", "docs/<topic>/loop-state.json", "docs/<topic>/phase-XX-<slug>.md"],
     "primary_context": [],
     "context_budget": "focused",
-    "do_not_load_unless": []
+    "do_not_load_unless": ["source-packet.md only for targeted lookup or writeback"]
   },
   "boundaries": {
     "likely_edit_paths": [],
@@ -234,7 +236,7 @@ Every phase file should be assignable as one standalone goal. Use this section o
 - GOAL_TARGET: <single sentence target>
 - GOAL_PROMPT: Complete <PREFIX-XX> <Name> for `<repo>` by following `docs/<topic>/phase-XX-<slug>.md`; <constraints>; stay inside the named edit boundaries; finish only after validation, regression, compliance, rollback, evidence, and acceptance gates pass or blockers are documented.
 - DEPENDS_ON: <none or IDs>
-- READ_FIRST: `docs/<topic>/README.md`, `docs/<topic>/phase-manifest.md`, this file
+- READ_FIRST: `docs/<topic>/context-profile.json`, `docs/<topic>/loop-state.json`, this file
 - PRIMARY_CONTEXT: <files, routes, schemas, APIs, design artifacts>
 - LIKELY_EDIT_PATHS: <bounded paths>
 - DO_NOT_EDIT: <protected files, non-goals, external systems>
@@ -266,7 +268,7 @@ Every phase file should be assignable as one standalone goal. Use this section o
 
 ## Execution Capture
 
-## Evaluator Protocol
+## Critic Protocol
 
 ## Acceptance Criteria
 

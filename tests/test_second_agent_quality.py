@@ -59,6 +59,7 @@ class SecondAgentQualityTests(unittest.TestCase):
 
         runtime_files = [
             "README.md",
+            "context-profile.json",
             "phase-manifest.md",
             "source-packet.md",
             "progress-log.md",
@@ -86,19 +87,19 @@ class SecondAgentQualityTests(unittest.TestCase):
             "Target phase file:",
             "Target feature-oracle item: CR-F001",
             "Open",
-            "loop-contract.json",
+            "context-profile.json",
             "loop-state.json",
-            "feature-oracle.json",
-            "continuity-ledger.md",
             "Work on exactly one phase and one feature-oracle item.",
-            "Summarize code facts back into the source packet and continuity ledger",
+            "Summarize code facts back into targeted source-packet and continuity-ledger sections",
             "Update the phase report, progress log, handoff file, continuity ledger, and oracle evidence",
             "independent critic/subagent",
             "Treat `--strict` as structure readiness only",
             "--completion-gate --phase CR-00",
+            "Preserve progressive disclosure",
         ]
         for snippet in required_snippets:
             self.assertIn(snippet, prompt)
+        self.assertNotIn("Open `", prompt.split("Execution rule:", 1)[0].replace("Open `", "", 3))
 
     def test_scaffold_uses_repo_validation_discovery_not_python_unit_default(self) -> None:
         tmp, output = self.scaffold()
@@ -128,6 +129,7 @@ class SecondAgentQualityTests(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
 
         state = json.loads(read(output / "loop-state.json"))
+        profile = json.loads(read(output / "context-profile.json"))
         handoff = read(output / "agent-handoff.md")
         critic_template = read(output / "reports" / "critic-verdict-template.md")
         progress = read(output / "progress-log.md")
@@ -136,6 +138,9 @@ class SecondAgentQualityTests(unittest.TestCase):
 
         self.assertEqual(state["active_phase"], "CR-00")
         self.assertEqual(state["active_feature"], "CR-F001")
+        self.assertIn("progressive disclosure", profile["strategy"])
+        self.assertLessEqual(len(profile["cold_start"]["required_files"]), 3)
+        self.assertIn("source-packet.md", json.dumps(profile["deferred"]))
         self.assertEqual(first_feature["id"], "CR-F001")
         self.assertEqual(first_feature["phase_id"], "CR-00")
         self.assertIn("Active role: planner", handoff)
@@ -186,6 +191,7 @@ class SecondAgentQualityTests(unittest.TestCase):
         manifest = read(output / "phase-manifest.md")
         handoff = read(output / "agent-handoff.md")
         source_packet = read(output / "source-packet.md")
+        context_profile = read(output / "context-profile.json")
         critic_template = read(output / "reports" / "critic-verdict-template.md")
         first_phase = read(output / "phase-00-baseline-audit.md")
         final_phase = read(output / "phase-02-operator-review-ui.md")
@@ -193,9 +199,13 @@ class SecondAgentQualityTests(unittest.TestCase):
         for text in [readme, manifest, handoff, source_packet, final_phase]:
             self.assertIn("whole-demand regression", text)
             self.assertIn("critic", text.lower())
+        self.assertIn("progressive disclosure", context_profile)
+        self.assertIn("critic", context_profile.lower())
 
         self.assertNotIn("whole-demand regression", first_phase)
         self.assertIn("context compaction", readme)
+        self.assertIn("context-profile.json", readme)
+        self.assertIn("Load first", manifest)
         self.assertIn("`--strict` is structure readiness, not completion proof", readme)
         self.assertIn("--completion-gate", manifest)
         self.assertIn("blocked/partial report", handoff)

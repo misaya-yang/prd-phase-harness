@@ -125,6 +125,7 @@ def write_minimal_harness(
             "completion_report": f"{docs_path}/reports/rt-00-baseline-audit-report.md",
         },
         "runtime": {
+            "context_profile": f"{docs_path}/context-profile.json",
             "feature_oracle": f"{docs_path}/feature-oracle.json",
             "loop_contract": f"{docs_path}/loop-contract.json",
             "loop_state": f"{docs_path}/loop-state.json",
@@ -141,21 +142,19 @@ def write_minimal_harness(
         },
         "context": {
             "read_first": [
-                f"{docs_path}/README.md",
-                f"{docs_path}/phase-manifest.md",
-                f"{docs_path}/source-packet.md",
-                f"{docs_path}/loop-contract.json",
                 f"{docs_path}/loop-state.json",
-                f"{docs_path}/feature-oracle.json",
-                f"{docs_path}/progress-log.md",
-                f"{docs_path}/agent-handoff.md",
-                f"{docs_path}/continuity-ledger.md",
-                f"{docs_path}/next-window-prompt.md",
+                f"{docs_path}/context-profile.json",
                 f"{docs_path}/phase-00-baseline-audit.md",
             ],
             "primary_context": ["README.md", "scripts"],
             "context_budget": "focused",
-            "do_not_load_unless": ["external dashboards"],
+            "do_not_load_unless": [
+                "source-packet.md only for targeted lookup or writeback",
+                "continuity-ledger.md only for dependency boundary lookup or writeback",
+                "feature-oracle.json only for selected feature item",
+                "progress-log.md only when status history is unclear",
+                "external dashboards only after approval",
+            ],
         },
         "boundaries": {
             "likely_edit_paths": ["docs/runtime-harness"],
@@ -243,7 +242,7 @@ def write_minimal_harness(
 - GOAL_TARGET: Establish current system evidence before implementation.
 - GOAL_PROMPT: Complete RT-00 Baseline Audit for `.` by following `{docs_path}/phase-00-baseline-audit.md`; stay inside audit-only boundaries; finish only after validation, regression, review, compliance, rollback, evidence, and acceptance gates pass or blockers are documented.
 - DEPENDS_ON: none
-- READ_FIRST: `{docs_path}/README.md`, `{docs_path}/phase-manifest.md`, this file
+- READ_FIRST: `{docs_path}/context-profile.json`, `{docs_path}/loop-state.json`, this file
 - PRIMARY_CONTEXT: README.md, scripts
 - LIKELY_EDIT_PATHS: docs/runtime-harness
 - DO_NOT_EDIT: production systems
@@ -300,7 +299,7 @@ Revert docs-only changes.
 
 Write the phase report and progress-log update.
 
-## Evaluator Protocol
+## Critic Protocol
 
 Reject completion without report evidence and runtime files.
 
@@ -322,7 +321,7 @@ Create an executable long-running agent harness.
 
 ## Coding Agent Loading Protocol
 
-Open README, manifest, target phase, and runtime files before planning.
+Open context profile, loop state, and target phase before planning; defer broad runtime files.
 
 ## Long-Running Runtime Protocol
 
@@ -334,7 +333,7 @@ Source facts come from repository files.
 
 ## Runtime Artifacts
 
-Feature oracle, progress log, handoff, continuity ledger, and next-window prompt are required.
+Context profile, feature oracle, progress log, handoff, continuity ledger, and next-window prompt are required.
 
 ## Current System Shape
 
@@ -420,6 +419,7 @@ RT-00 Baseline Audit
 
 | Artifact | Path | Agent Rule |
 | --- | --- | --- |
+| Context Profile | `context-profile.json` | load first and follow progressive disclosure |
 | Loop Contract | `loop-contract.json` | run observe/select/execute/verify/record/decide |
 | Loop State | `loop-state.json` | track active phase, feature, iteration, and decision |
 | Feature Oracle | `feature-oracle.json` | update evidence only |
@@ -432,7 +432,7 @@ RT-00 Baseline Audit
 
 - Planner writes contracts.
 - Generator executes one item.
-- Evaluator checks evidence.
+- Critic checks evidence.
 
 ## External Inputs Checklist
 
@@ -453,6 +453,50 @@ Write the phase report before moving on.
     (folder / "reports" / "phase-report-template.md").write_text("# Report\n", encoding="utf-8")
 
     if include_runtime_files:
+        context_profile = {
+            "schema_version": "prd-phase-harness/context-profile/v1",
+            "strategy": "progressive disclosure for runtime harness tests",
+            "caps": {
+                "cold_start_max_files": 3,
+                "read_first_max_files": 4,
+                "primary_context_max_items": 4,
+            },
+            "cold_start": {
+                "required_files": [
+                    f"{folder}/context-profile.json",
+                    f"{folder}/loop-state.json",
+                    "target phase file",
+                ],
+                "rule": "Do not load the full docs folder or every runtime artifact during cold start.",
+            },
+            "roles": {
+                "actor": {
+                    "required_files": [
+                        f"{folder}/context-profile.json",
+                        f"{folder}/loop-state.json",
+                        "target phase file",
+                    ],
+                    "primary_context": ["README.md", "scripts"],
+                    "defer": [f"{folder}/source-packet.md", f"{folder}/continuity-ledger.md"],
+                },
+                "critic": {
+                    "required_files": ["actor report", "critic-verdict template", "target phase file"],
+                    "primary_context": ["changed files or diff", "validation evidence"],
+                },
+            },
+            "deferred": {
+                "README.md": "do not load by default; open only when intent is unclear",
+                "phase-manifest.md": "do not load by default; open only when target phase is unknown",
+                "source-packet.md": "do not load by default; open only named sections for code fact lookup or writeback",
+                "loop-contract.json": "do not load by default; open only if loop semantics are unclear",
+                "feature-oracle.json": "do not load whole file by default; inspect only the selected feature item",
+                "progress-log.md": "do not load whole file by default; inspect only recent entries when blockers or status are unclear",
+                "agent-handoff.md": "do not load by default; open only when next action is unclear",
+                "continuity-ledger.md": "do not load whole file by default; inspect only dependency rows or writeback sections",
+                "next-window-prompt.md": "do not load by default; open only when preparing a fresh context window",
+            },
+        }
+        (folder / "context-profile.json").write_text(json.dumps(context_profile, indent=2), encoding="utf-8")
         (folder / "source-packet.md").write_text("# Source Packet\n\nRepo facts only.\n", encoding="utf-8")
         loop_contract = {
             "schema_version": "prd-phase-harness/loop-contract/v1",
@@ -503,15 +547,10 @@ Target phase file: `{folder}/phase-00-baseline-audit.md`
 Target feature-oracle item: RT-F001
 
 Loading order:
-1. Open `{folder}/README.md`.
-2. Open `{folder}/phase-manifest.md`.
-3. Open `{folder}/loop-contract.json`.
-4. Open `{folder}/loop-state.json`.
-5. Open `{folder}/feature-oracle.json`.
-6. Open `{folder}/progress-log.md`.
-7. Open `{folder}/agent-handoff.md`.
-8. Open `{folder}/continuity-ledger.md`.
-9. Open the target phase file and its PRIMARY_CONTEXT.
+1. Open `{folder}/context-profile.json`.
+2. Open `{folder}/loop-state.json`.
+3. Open `{folder}/phase-00-baseline-audit.md`.
+4. Do not load README, manifest, full source packet, full oracle, progress log, handoff, continuity ledger, or prior reports unless the context profile trigger applies.
 
 Execution rule:
 - Work on exactly one phase and one feature-oracle item.
@@ -520,6 +559,7 @@ Execution rule:
 - Run validation and runtime checks.
 - Summarize code facts into the source packet and continuity ledger.
 - Update the phase report, progress log, handoff file, continuity ledger, and oracle evidence before claiming completion.
+- Preserve progressive disclosure and open deferred files only when the trigger applies.
 
 Stop conditions:
 - Stop if credentials, production systems, destructive commands, or out-of-scope edits are required.
@@ -563,6 +603,7 @@ class HarnessRuntimeTests(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
             for name in [
+                "context-profile.json",
                 "source-packet.md",
                 "loop-contract.json",
                 "loop-state.json",
@@ -585,6 +626,7 @@ class HarnessRuntimeTests(unittest.TestCase):
             result = run_cmd(str(VALIDATOR), str(folder), "--strict")
 
             self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Missing runtime file: context-profile.json", result.stdout)
             self.assertIn("Missing runtime file: source-packet.md", result.stdout)
             self.assertIn("Missing runtime file: loop-contract.json", result.stdout)
             self.assertIn("Missing runtime file: loop-state.json", result.stdout)
@@ -836,7 +878,7 @@ class HarnessRuntimeTests(unittest.TestCase):
                 contract["context"]["read_first"] = [  # type: ignore[index]
                     item
                     for item in read_first
-                    if not str(item).endswith(("source-packet.md", "loop-state.json", "feature-oracle.json"))
+                    if not str(item).endswith(("context-profile.json", "loop-state.json"))
                 ]
 
             update_phase_contract(phase_path, remove_load_files)
@@ -844,9 +886,93 @@ class HarnessRuntimeTests(unittest.TestCase):
             result = run_cmd(str(VALIDATOR), str(folder), "--strict")
 
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("phase-00-baseline-audit.md context.read_first missing execution file source-packet.md", result.stdout)
-            self.assertIn("phase-00-baseline-audit.md context.read_first missing execution file loop-state.json", result.stdout)
-            self.assertIn("phase-00-baseline-audit.md context.read_first missing execution file feature-oracle.json", result.stdout)
+            self.assertIn("phase-00-baseline-audit.md context.read_first missing hot-path file context-profile.json", result.stdout)
+            self.assertIn("phase-00-baseline-audit.md context.read_first missing hot-path file loop-state.json", result.stdout)
+
+    def test_strict_validation_rejects_eager_deferred_context_load(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            phase_path = folder / "phase-00-baseline-audit.md"
+
+            def add_deferred_loads(contract: dict[str, object]) -> None:
+                contract["context"]["read_first"] = [  # type: ignore[index]
+                    f"{folder}/context-profile.json",
+                    f"{folder}/loop-state.json",
+                    f"{folder}/phase-00-baseline-audit.md",
+                    f"{folder}/source-packet.md",
+                    f"{folder}/feature-oracle.json",
+                ]
+
+            update_phase_contract(phase_path, add_deferred_loads)
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("context.read_first exceeds progressive disclosure budget", result.stdout)
+            self.assertIn("context.read_first eagerly loads deferred file source-packet.md", result.stdout)
+            self.assertIn("context.read_first eagerly loads deferred file feature-oracle.json", result.stdout)
+
+    def test_strict_validation_rejects_missing_context_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            (folder / "context-profile.json").unlink()
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Missing runtime file: context-profile.json", result.stdout)
+
+    def test_strict_validation_rejects_context_profile_budget_overrun(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            profile_path = folder / "context-profile.json"
+            profile = json.loads(profile_path.read_text(encoding="utf-8"))
+            profile["cold_start"]["required_files"].extend(
+                [str(folder / "README.md"), str(folder / "source-packet.md")]
+            )
+            profile_path.write_text(json.dumps(profile, indent=2), encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("context-profile.json cold_start.required_files exceeds cap", result.stdout)
+            self.assertIn("cold_start.required_files must not eagerly load deferred file README.md", result.stdout)
+            self.assertIn("cold_start.required_files must not eagerly load deferred file source-packet.md", result.stdout)
+
+    def test_strict_validation_rejects_invalid_context_profile_caps_without_traceback(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            profile_path = folder / "context-profile.json"
+            profile = json.loads(profile_path.read_text(encoding="utf-8"))
+            profile["caps"]["cold_start_max_files"] = "many"
+            profile["caps"]["read_first_max_files"] = 99
+            profile_path.write_text(json.dumps(profile, indent=2), encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertNotIn("Traceback", result.stdout + result.stderr)
+            self.assertIn("context-profile.json caps.cold_start_max_files must be a positive integer", result.stdout)
+            self.assertIn("context-profile.json caps.read_first_max_files must be <= hard cap 4", result.stdout)
+
+    def test_strict_validation_rejects_actor_profile_eager_source_packet_load(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            profile_path = folder / "context-profile.json"
+            profile = json.loads(profile_path.read_text(encoding="utf-8"))
+            profile["roles"]["actor"]["required_files"].append(str(folder / "source-packet.md"))
+            profile_path.write_text(json.dumps(profile, indent=2), encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("context-profile.json roles.actor.required_files exceeds cap", result.stdout)
+            self.assertIn("context-profile.json actor role must not eagerly load source-packet.md", result.stdout)
 
     def test_strict_validation_rejects_phase_without_evidence_writeback_artifacts(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

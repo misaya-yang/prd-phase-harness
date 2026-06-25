@@ -49,6 +49,7 @@ completion_report: required report path
 ## `runtime`
 
 ```text
+context_profile: path to context-profile.json
 feature_oracle: path to feature-oracle.json
 loop_contract: path to loop-contract.json
 loop_state: path to loop-state.json
@@ -61,6 +62,7 @@ agent_roles: array containing planner, generator, critic when the harness suppor
 ```
 
 The runtime files are the restart surface for fresh context windows. They should be concrete paths in final harnesses.
+`context_profile` is the first file to load and defines which other runtime files are deferred.
 
 ## `context`
 
@@ -70,6 +72,10 @@ primary_context: bounded files/routes/design artifacts
 context_budget: focused | broad | exploratory
 do_not_load_unless: contexts that require a blocker or explicit reason
 ```
+
+`read_first` should be the hot path only: `context-profile.json`, `loop-state.json`, and the target phase file. Put source packet, oracle, progress log, handoff, continuity ledger, reports, and manifest in `do_not_load_unless` unless a specific phase truly needs them before planning.
+
+Final harnesses should keep `read_first` at 4 files or fewer and `primary_context` at 4 items or fewer. Broader context belongs in `context-profile.json` deferred triggers.
 
 ## `boundaries`
 

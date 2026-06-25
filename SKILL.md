@@ -12,7 +12,7 @@ Turn product intent into a cold-start executable harness for coding agents. The 
 Core invariant:
 
 ```text
-intent -> source packet -> loop contract -> loop state -> feature oracle -> continuity ledger -> phase map -> machine contract -> runtime handoff -> execution report -> dependency unlock
+intent -> context profile -> source packet -> loop contract -> loop state -> feature oracle -> continuity ledger -> phase map -> machine contract -> runtime handoff -> execution report -> dependency unlock
 ```
 
 Mission: make top-tier coding agents stable across long-running delivery, context compaction, and fresh-window handoffs by turning requirements into ordered, independently verifiable phases with explicit gates, review, tests, minimal-change boundaries, and final whole-demand regression.
@@ -36,11 +36,11 @@ If the user only asks for a small obvious code edit, do the edit directly instea
 Every finished harness must be:
 
 - Standalone and recoverable: runtime files contain enough state for a fresh agent with no hidden chat context.
-- Bounded and minimal: read paths, edit paths, protected paths, tools, approvals, and allowed scope expansion are explicit.
+- Bounded and minimal: read paths, edit paths, protected paths, tools, approvals, allowed scope expansion, and context-load budgets are explicit.
 - Sequential and connected: dependencies are acyclic; each phase records what it inherits, owns, and unlocks.
 - Verifiable and observable: commands, runtime checks, regression scope, evidence outputs, blockers, and acceptance gates are concrete.
 - Loop-driven: agents follow `observe -> select -> execute -> verify -> record -> decide`.
-- Compaction-resilient: requirements, decisions, code facts, validation results, review findings, blockers, and next actions are written to files.
+- Compaction-resilient: requirements, decisions, code facts, validation results, review findings, blockers, and next actions are written to files, but fresh windows load them through progressive disclosure instead of full-folder reads.
 - Critic-and-test complete: each phase has independent critic evidence, test evidence or a blocker, and the terminal phase includes whole-demand regression over completed oracle items.
 - Safe and portable: untrusted inputs, secrets, destructive commands, external services, migrations, deployment, and Agent Skills portability are gated.
 
@@ -53,7 +53,7 @@ When building or repairing a harness:
 3. Map each requirement to at least one feature-oracle case, phase, validation gate, and evidence output.
 4. Build a source packet from repo/design facts, risks, scripts, tests, routes, schemas, dependencies, approvals, and blockers.
 5. Discover real validation commands from manifests, package scripts, build files, or CI. Scaffold discovery commands are starter evidence only.
-6. Create loop state, feature oracle, progress log, continuity ledger, handoff, and next-window prompt.
+6. Create context profile, loop state, feature oracle, progress log, continuity ledger, handoff, and next-window prompt.
 7. Create a baseline/audit phase first unless fresh baseline evidence already exists.
 8. Split phases by dependency and risk profile; each phase must be independently executable, independently verifiable, and connected to adjacent phases.
 9. Require code-summary writeback into `source-packet.md` and `continuity-ledger.md` before handoff.
@@ -97,7 +97,7 @@ For the JSON schema, load `references/phase-contract-schema.md`.
 
 When executing one phase:
 
-1. Open folder README, manifest, target phase, and `PRIMARY_CONTEXT` only.
+1. Open `context-profile.json`, `loop-state.json`, target phase, and hot-path `PRIMARY_CONTEXT` only.
 2. Verify dependencies are passed or explicitly waived.
 3. Write or state a plan before editing.
 4. Stay inside `LIKELY_EDIT_PATHS`; document any required expansion before doing it.
@@ -106,6 +106,7 @@ When executing one phase:
 7. Write `EVIDENCE_OUTPUT` using the report template.
 8. Mark completion only when required gates pass or blockers are documented.
 9. Do not advance to the next phase unless the prior report unlocks it.
+10. Defer README, manifest, source packet, oracle, progress log, handoff, continuity ledger, prior reports, and next-window prompt until the context profile trigger applies.
 
 For full detail, load `references/phase-runner-protocol.md`.
 
@@ -178,7 +179,9 @@ Before claiming the harness is ready:
 - A filled harness passes validator with `--strict`.
 - Any claimed phase completion passes `--strict --completion-gate --phase <PHASE_ID>`.
 - Any claimed full-demand, release, or goal completion passes `--strict --completion-gate`.
-- Runtime files exist: `source-packet.md`, `loop-contract.json`, `loop-state.json`, `feature-oracle.json`, `progress-log.md`, `agent-handoff.md`, `continuity-ledger.md`, and `next-window-prompt.md`.
+- Runtime files exist: `context-profile.json`, `source-packet.md`, `loop-contract.json`, `loop-state.json`, `feature-oracle.json`, `progress-log.md`, `agent-handoff.md`, `continuity-ledger.md`, and `next-window-prompt.md`.
+- `context-profile.json` defines progressive-disclosure hot path, role-specific load profiles, deferred triggers, and context caps.
+- Each phase `READ_FIRST` stays within the hot path: context profile, loop state, and target phase file by default.
 - Loop contract includes observe, select, execute, verify, record, and decide; loop state points to an existing phase and feature.
 - Each phase has cross-phase continuity and code-summary writeback instructions that name source packet, continuity ledger, report, oracle, progress log, and handoff updates.
 - No final phase relies only on a scaffold validation-discovery command; concrete checks are recorded, or the blocker is explicit.

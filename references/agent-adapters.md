@@ -26,7 +26,7 @@ Codex workflows often have:
 
 Generated phases should make browser checks and evidence outputs explicit so Codex can verify before completion.
 
-For long-running goals, generated `next-window-prompt.md` should be copy-ready for a new Codex window: include the skill name, docs path, target phase, target feature-oracle item, loading order, one-phase rule, continuity-ledger update, code-summary writeback, validation, evidence, and stop conditions.
+For long-running goals, generated `next-window-prompt.md` should be copy-ready for a new Codex window: include the skill name, docs path, `context-profile.json`, target phase, target feature-oracle item, loading order, one-phase rule, continuity-ledger update, code-summary writeback, validation, evidence, deferred-load rule, and stop conditions.
 
 ## Claude Code Notes
 
@@ -38,9 +38,9 @@ Claude Code workflows often have:
 - Custom subagents with separate context windows.
 - Permission modes, hooks, and worktrees.
 
-Generated phases should keep context bounded so a subagent can execute a phase without polluting the main session.
+Generated phases should keep context bounded through `context-profile.json` so a subagent can execute a phase without polluting the main session.
 
-For Claude Code, keep `feature-oracle.json`, `progress-log.md`, `continuity-ledger.md`, and `agent-handoff.md` small enough for fast fresh-window loading. Use subagents or fresh-context reviewers for completion critic passes; make the critic deeper when the phase is UI-heavy, AI/eval-heavy, release-sensitive, or broad.
+For Claude Code, use `context-profile.json` to load only loop state and the target phase first. Keep `feature-oracle.json`, `progress-log.md`, `continuity-ledger.md`, and `agent-handoff.md` deferred unless the target phase or critic task needs them. Use subagents or fresh-context reviewers for completion critic passes; make the critic deeper when the phase is UI-heavy, AI/eval-heavy, release-sensitive, or broad.
 
 ## Subagent Guidance
 

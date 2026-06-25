@@ -68,13 +68,14 @@ python3 <skill-dir>/scripts/validate_harness_prd.py {{DOCS_PATH}} --strict --com
 
 | Artifact | Path | Agent Rule |
 | --- | --- | --- |
-| Loop Contract | `{{LOOP_CONTRACT_PATH}}` | Follow observe, select, execute, verify, record, decide before claiming progress. |
-| Loop State | `{{LOOP_STATE_PATH}}` | Keep active phase, feature, iteration, status, and next action current. |
-| Feature Oracle | `{{FEATURE_ORACLE_PATH}}` | Update only status, evidence, and notes for the feature being worked. |
-| Progress Log | `{{PROGRESS_LOG_PATH}}` | Append session start/end, validation, and blocker notes. |
-| Agent Handoff | `{{AGENT_HANDOFF_PATH}}` | Keep planner, generator, and critic notes file-based and brief. |
-| Continuity Ledger | `{{CONTINUITY_LEDGER_PATH}}` | Preserve phase relatedness, code-summary writeback, and interface boundary decisions. |
-| Next Window Prompt | `{{NEXT_WINDOW_PROMPT_PATH}}` | Use this to restart work in a fresh context window. |
+| Context Profile | `{{CONTEXT_PROFILE_PATH}}` | Load first; it defines hot path, role budgets, and deferred triggers. |
+| Loop State | `{{LOOP_STATE_PATH}}` | Load first; keep active phase, feature, iteration, status, and next action current. |
+| Loop Contract | `{{LOOP_CONTRACT_PATH}}` | Deferred; open only when loop semantics are unclear. |
+| Feature Oracle | `{{FEATURE_ORACLE_PATH}}` | Deferred; inspect only the selected feature item unless repairing oracle coverage. |
+| Progress Log | `{{PROGRESS_LOG_PATH}}` | Deferred; inspect recent entries only when blocker or status history is unclear. |
+| Agent Handoff | `{{AGENT_HANDOFF_PATH}}` | Deferred; open only when next action or role handoff is unclear. |
+| Continuity Ledger | `{{CONTINUITY_LEDGER_PATH}}` | Deferred; open only dependency rows needed for target phase or writeback. |
+| Next Window Prompt | `{{NEXT_WINDOW_PROMPT_PATH}}` | Deferred; open only when preparing a fresh context window. |
 
 ## Agent Role Handoffs
 
@@ -91,6 +92,7 @@ python3 <skill-dir>/scripts/validate_harness_prd.py {{DOCS_PATH}} --strict --com
 - Each phase records test evidence and independent critic evidence, or a blocker.
 - The terminal phase or release gate runs whole-demand regression across completed feature-oracle items.
 - Runtime files must be sufficient for a fresh agent to resume after context compaction.
+- Cold start must use `context-profile.json`; do not load the full docs folder or every runtime file by default.
 - `--strict` is structure readiness only; phase and full-demand completion require `--completion-gate`.
 
 ## Goal Setup Templates

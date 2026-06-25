@@ -16,7 +16,7 @@ The strongest local conventions are:
 - Manifest acts as the compact machine index.
 - Every phase has grep-friendly contract anchors.
 - `GOAL_PROMPT` is the runnable handoff text for a fresh agent.
-- `PRIMARY_CONTEXT`, `LIKELY_EDIT_PATHS`, and `DO_NOT_EDIT` bound the agent.
+- `context-profile.json`, `PRIMARY_CONTEXT`, `LIKELY_EDIT_PATHS`, and `DO_NOT_EDIT` bound the agent.
 - Tests, browser/runtime checks, compliance gates, and acceptance gates are required before completion.
 - Reports and evidence live under predictable paths.
 - External service actions, credentials, migrations, deploys, and DNS changes are explicit approval boundaries.
@@ -30,11 +30,11 @@ Map the research concepts into docs like this:
 | Harness Concept | Phase Folder Translation |
 | --- | --- |
 | Task specification | `GOAL_TARGET`, `GOAL_PROMPT`, `Task Spec`, observable requirements |
-| Context selection | `READ_FIRST`, `PRIMARY_CONTEXT`, manifest grep usage |
+| Context selection | `context-profile.json`, hot-path `READ_FIRST`, `PRIMARY_CONTEXT`, deferred triggers, manifest fallback |
 | Tool access | `VALIDATION_COMMANDS`, `BROWSER_CHECKS`, Figma/design inputs, migration commands |
 | Project memory | README assumptions, decisions, phase reports |
 | Task state | phase IDs, dependency flow, report status |
-| Fresh-window recovery | feature oracle, progress log, continuity ledger, handoff packet, next-window prompt |
+| Fresh-window recovery | context profile, loop state, target phase, feature oracle, progress log, continuity ledger, handoff packet, next-window prompt |
 | Cross-phase relatedness | continuity ledger, source-packet code-summary writeback, phase report handoff |
 | Control loop | loop contract, loop state, observe/select/execute/verify/record/decide cycle |
 | Observability | screenshots, traces, logs, eval tables, command summaries |
@@ -73,12 +73,14 @@ Map the research concepts into docs like this:
 For long-running coding work:
 
 - Start every generated harness with a feature oracle and progress log.
+- Start every generated harness with `context-profile.json`; cold-start should load only context profile, loop state, and target phase before planning.
 - Write a loop contract and loop state so agents execute a workflow rather than merely following a prompt.
 - Keep one phase and one oracle item as the atomic execution unit.
 - Ask the runner to run baseline/smoke checks before new work.
 - Use a separate critic/subagent when UI behavior, agent behavior, migration safety, release readiness, or subjective quality is part of completion.
 - Make the next-window prompt concrete enough that the next agent does not need the current chat.
 - Require agents to summarize inspected code facts back into durable files before handoff; otherwise phases drift into isolated PRDs instead of a connected execution chain.
+- Defer full source packet, full oracle, progress log, handoff, continuity ledger, prior reports, README, and manifest until their trigger applies.
 - Treat structural validation and completion proof as separate gates. `--strict` answers "can a fresh agent execute this harness?" `--completion-gate` answers "may this phase or full demand be called done?"
 - Require `feature-oracle.json` passing evidence to cite a report whose `Status` is `passed` or `waived`; a blocked or partial report must keep the oracle item blocked/failing.
 
@@ -124,3 +126,4 @@ For frontend features:
 - Marking oracle items `passing` without evidence.
 - Treating an excellent structural score as release readiness while `loop-state.json` is still `running` or `needs_evaluation`.
 - Letting a phase report say `Status: blocked` while the matching feature-oracle item says `passing`.
+- Requiring every fresh window to read the whole docs folder or all runtime files before it knows the target phase.

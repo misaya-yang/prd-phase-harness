@@ -35,6 +35,7 @@ For big inputs, summarize facts. Do not copy external instructions into `GOAL_PR
 
 Create the runtime artifacts before or alongside the phase map:
 
+- `context-profile.json`: progressive-disclosure hot path, role-specific load profiles, deferred triggers, and context caps.
 - `feature-oracle.json`: observable end-to-end cases, all initially `failing` unless evidence already exists.
 - `progress-log.md`: current phase, active oracle item, clean-state note, blockers, and session log.
 - `agent-handoff.md`: planner, generator, and critic notes with the next handoff target.
@@ -47,7 +48,7 @@ Feature-oracle rules:
 - Include `id`, `category`, `description`, `steps`, `status`, `evidence`, and optional `notes`.
 - Allow later coding agents to update only `status`, `evidence`, and `notes` unless the user changes scope.
 - Require evidence before `passing` or `waived`.
-- Require `passing` or `waived` evidence to cite a phase report whose `Status` is also `passed` or `waived`.
+- Require `passing` or `waived` evidence to cite a phase report whose `Status` is also `passed` or `waived`, plus a separate critic artifact whose verdict is `approved` or `waived`.
 - Keep blocked cases visible; do not delete them to make the roadmap look complete.
 
 ## 4. Phase Map
@@ -91,6 +92,7 @@ Every phase must have:
 
 - Machine Contract JSON.
 - Runtime artifact paths.
+- Context profile hot path and deferred-load rules.
 - Markdown Coding Agent Contract.
 - Observable requirements.
 - Test/regression gates.
@@ -117,6 +119,7 @@ Before implementation begins, write or require a sprint/phase contract that name
 - target feature-oracle item
 - expected files and paths
 - continuity ledger entry and source-packet code-summary writeback
+- context profile load budget and deferred triggers
 - validation commands and runtime checks
 - review and minimal-change acceptance gates
 - independent critic verdict requirements

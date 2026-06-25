@@ -24,7 +24,7 @@ The JSON block below is the authoritative machine-readable contract for goal-mod
 - GOAL_TARGET: {{GOAL_TARGET}}
 - GOAL_PROMPT: Complete {{PHASE_ID}} {{PHASE_NAME}} for `{{REPO_PATH}}` by following `{{PHASE_FILE}}`; {{GOAL_PROMPT_CONSTRAINTS}}; stay inside the named edit boundaries; make the smallest requirement-satisfying change; finish only after validation, regression, review, compliance, rollback, evidence, acceptance gates, and `--completion-gate --phase {{PHASE_ID}}` pass or blockers are documented.
 - DEPENDS_ON: {{DEPENDS_ON}}
-- READ_FIRST: `{{DOCS_PATH}}/README.md`, `{{DOCS_PATH}}/phase-manifest.md`, this file
+- READ_FIRST: `{{CONTEXT_PROFILE_PATH}}`, `{{LOOP_STATE_PATH}}`, this file
 - PRIMARY_CONTEXT: {{PRIMARY_CONTEXT}}
 - LIKELY_EDIT_PATHS: {{LIKELY_EDIT_PATHS}}
 - DO_NOT_EDIT: {{DO_NOT_EDIT}}
@@ -41,6 +41,7 @@ The JSON block below is the authoritative machine-readable contract for goal-mod
 ## Harness Runtime
 
 - FEATURE_ORACLE: `{{FEATURE_ORACLE_PATH}}`
+- CONTEXT_PROFILE: `{{CONTEXT_PROFILE_PATH}}`
 - LOOP_CONTRACT: `{{LOOP_CONTRACT_PATH}}`
 - LOOP_STATE: `{{LOOP_STATE_PATH}}`
 - PROGRESS_LOG: `{{PROGRESS_LOG_PATH}}`
@@ -50,15 +51,16 @@ The JSON block below is the authoritative machine-readable contract for goal-mod
 
 Session boot:
 
-1. Read the runtime artifacts above.
-2. Follow the loop contract: observe, select, execute, verify, record, decide.
-3. Run the target phase's baseline or smoke validation before implementation when available.
-4. Select one matching feature-oracle item and keep work scoped to that item and this phase.
-5. Summarize inspected code facts and interface decisions back into the source packet and continuity ledger.
-6. Record minimal-change scope and test evidence.
-7. Update loop state, progress, continuity, and handoff files before exiting.
-8. Hand off to an independent critic/subagent for completion review.
-9. Run `--strict --completion-gate --phase {{PHASE_ID}}` before claiming this phase is passed or unlocked.
+1. Read `{{CONTEXT_PROFILE_PATH}}`, `{{LOOP_STATE_PATH}}`, and this phase file only.
+2. Load deferred runtime artifacts only when the context profile trigger applies.
+3. Follow the loop contract: observe, select, execute, verify, record, decide.
+4. Run the target phase's baseline or smoke validation before implementation when available.
+5. Select one matching feature-oracle item and keep work scoped to that item and this phase.
+6. Summarize inspected code facts and interface decisions back into targeted source-packet and continuity-ledger sections.
+7. Record minimal-change scope and test evidence.
+8. Update loop state, progress, continuity, and handoff files before exiting.
+9. Hand off to an independent critic/subagent for completion review.
+10. Run `--strict --completion-gate --phase {{PHASE_ID}}` before claiming this phase is passed or unlocked.
 
 ## Feature Oracle Policy
 
@@ -111,6 +113,7 @@ Before editing, inspect:
 {{CONTEXT_POLICY}}
 
 Do not load unrelated files unless a blocker requires expanding context.
+Do not load full runtime artifacts when `{{CONTEXT_PROFILE_PATH}}` provides a narrower trigger or slice.
 
 ## Requirements
 
@@ -136,9 +139,9 @@ Do not load unrelated files unless a blocker requires expanding context.
 
 Use `{{REPORT_TEMPLATE}}` when writing the phase report.
 
-## Evaluator Protocol
+## Critic Protocol
 
-{{EVALUATOR_PROTOCOL}}
+{{CRITIC_PROTOCOL}}
 
 ## Acceptance Criteria
 

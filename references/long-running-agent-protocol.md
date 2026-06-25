@@ -19,6 +19,7 @@ This follows two practical findings from modern agent harness work:
 
 | File | Purpose | Update Rule |
 | --- | --- | --- |
+| `context-profile.json` | Progressive disclosure budget: hot path, role-specific load profiles, deferred triggers, and files not loaded by default. | Builder owns; runners obey it before opening more context. |
 | `source-packet.md` | Durable facts, trust boundaries, assumptions, and risk inventory. | Builder updates; runners cite, not rewrite broadly. |
 | `loop-contract.json` | The control loop: observe, select, execute, verify, record, decide. | Builder owns; runners follow it and do not remove verification/record steps. |
 | `loop-state.json` | Active phase, feature, iteration, status, last decision, and next action. | Runners update after each decision and before exit. |
@@ -33,8 +34,8 @@ This follows two practical findings from modern agent harness work:
 Every fresh agent should:
 
 1. Run `pwd` and confirm the repo root.
-2. Read README, manifest, loop contract, loop state, feature oracle, progress log, handoff, continuity ledger, and target phase.
-3. Read only target `PRIMARY_CONTEXT` before planning.
+2. Read `context-profile.json`, `loop-state.json`, and the target phase file.
+3. Read only the role-specific hot-path `PRIMARY_CONTEXT` before planning.
 4. Check recent git history when available.
 5. Run the baseline/smoke command named in the target phase before adding new work.
 6. Pick one phase and one feature-oracle item.
@@ -43,6 +44,7 @@ Every fresh agent should:
 9. Record test evidence and minimal-change scope, then request an independent critic/subagent review before marking the phase passed.
 
 If baseline checks fail, fix or document that state before starting new feature work.
+Do not load README, manifest, full source packet, full feature oracle, progress log, handoff, continuity ledger, prior reports, or next-window prompt until the context profile trigger applies.
 
 ## Feature Oracle
 
@@ -121,6 +123,7 @@ The prompt must name:
 
 - skill to use
 - repo or docs path
+- context profile path
 - target phase ID and phase file
 - target feature-oracle item
 - loading order
@@ -132,6 +135,7 @@ The prompt must name:
 - test evidence, independent critic verdict, and minimal-change scope
 - terminal whole-demand regression when the final phase or release gate is assigned
 - stop conditions for credentials, production systems, destructive commands, and out-of-scope edits
+- progressive disclosure rule: open deferred files only when their trigger applies
 
 Avoid vague prompts like "continue from here." A good prompt lets a new window start without this conversation.
 

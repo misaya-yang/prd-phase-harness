@@ -16,29 +16,30 @@
 
 When assigned a phase goal:
 
-1. Open this `README.md`.
-2. Open `phase-manifest.md`.
-3. Open `loop-contract.json`, `loop-state.json`, `feature-oracle.json`, `progress-log.md`, `agent-handoff.md`, `continuity-ledger.md`, and `next-window-prompt.md`.
-4. Locate the target with:
+1. Open `{{CONTEXT_PROFILE_PATH}}`.
+2. Open `{{LOOP_STATE_PATH}}`.
+3. Open the assigned target phase file. If the target is unknown, locate it with:
 
 ```bash
 rg -n "PHASE_ID: <ID>|GOAL_PROMPT|VALIDATION_COMMANDS|ACCEPTANCE_GATES" {{DOCS_PATH}}
 ```
 
-5. Open only the target phase file and files listed in that phase's `PRIMARY_CONTEXT`.
+4. Open only the target phase file and hot-path items allowed by `context-profile.json`.
+5. Do not load the full docs folder, full `source-packet.md`, full `feature-oracle.json`, or prior reports unless the context profile trigger says to.
 6. Create a plan before editing.
 7. Treat `LIKELY_EDIT_PATHS` as the intended write boundary.
 8. Complete validation, browser/runtime checks, regression scope, review, compliance gates, rollback notes, evidence output, and acceptance gates before claiming completion.
-9. Summarize code facts and boundary decisions back into `source-packet.md` and `continuity-ledger.md`.
+9. Summarize code facts and boundary decisions back into `source-packet.md` and `continuity-ledger.md` using targeted sections only.
 10. Update `progress-log.md`, `agent-handoff.md`, the phase report, and only the relevant feature `status`/`evidence` fields in `feature-oracle.json`.
 11. Run `--strict --completion-gate --phase <PHASE_ID>` before declaring a phase complete or unlocked.
 12. Move to the next phase only after dependency gates are met or explicitly waived in a report.
 
 ## Long-Running Runtime Protocol
 
-Each fresh session must start from durable files instead of hidden chat context or pre-compaction memory:
+Each fresh session must start from the smallest durable context packet instead of hidden chat context or pre-compaction memory:
 
-- Read `{{PROGRESS_LOG_PATH}}` and recent git history before choosing work.
+- Read `{{CONTEXT_PROFILE_PATH}}` first and follow its role-specific load budget.
+- Read recent `{{PROGRESS_LOG_PATH}}` entries only when the active blocker or status is unclear.
 - Follow `{{LOOP_CONTRACT_PATH}}`: observe, select, execute, verify, record, then decide whether to continue or stop.
 - Update `{{LOOP_STATE_PATH}}` when the active phase, feature, iteration, decision, or blocker changes.
 - Update `{{CONTINUITY_LEDGER_PATH}}` when code facts, interfaces, contracts, or handoff boundaries change.
@@ -52,6 +53,7 @@ Each fresh session must start from durable files instead of hidden chat context 
 
 | Artifact | Purpose |
 | --- | --- |
+| `{{CONTEXT_PROFILE_PATH}}` | Progressive disclosure budget, hot-path files, role load profiles, and deferred triggers. |
 | `{{LOOP_CONTRACT_PATH}}` | The control loop: observe, select, execute, verify, record, decide. |
 | `{{LOOP_STATE_PATH}}` | Current phase, feature, iteration, status, last decision, and next action. |
 | `{{FEATURE_ORACLE_PATH}}` | End-to-end feature/test oracle. Agents may update status and evidence, not delete cases. |

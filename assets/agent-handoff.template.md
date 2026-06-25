@@ -8,6 +8,7 @@
 
 ## Planner Notes
 
+- Context profile: `{{DOCS_PATH}}/context-profile.json`
 - Source packet: `{{DOCS_PATH}}/source-packet.md`
 - Feature oracle: `{{FEATURE_ORACLE_PATH}}`
 - Continuity ledger: `{{CONTINUITY_LEDGER_PATH}}`
@@ -18,9 +19,10 @@
 ## Generator Notes
 
 - Work on one phase and one feature-oracle item at a time.
+- Load `context-profile.json`, `loop-state.json`, and the target phase first; defer broad runtime files until a trigger applies.
 - Stay inside the phase `LIKELY_EDIT_PATHS`.
 - Make the smallest requirement-satisfying change and justify any scope expansion.
-- Summarize inspected code facts into `{{DOCS_PATH}}/source-packet.md`.
+- Summarize inspected code facts into targeted sections of `{{DOCS_PATH}}/source-packet.md`.
 - Update `{{PROGRESS_LOG_PATH}}`, `{{CONTINUITY_LEDGER_PATH}}`, and the phase report before handoff.
 - Record test evidence and independent critic evidence before marking a phase passed.
 - Run `--strict --completion-gate --phase <PHASE_ID>` before marking a phase passed or unlocked.

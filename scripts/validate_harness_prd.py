@@ -42,7 +42,7 @@ REQUIRED_PHASE_SECTIONS = [
     "## Compliance and Safety Requirements",
     "## Rollback and Recovery",
     "## Execution Capture",
-    "## Evaluator Protocol",
+    "## Critic Protocol",
     "## Acceptance Criteria",
     "## Risks",
 ]
@@ -96,6 +96,7 @@ REQUIRED_JSON_PATHS = [
     ("goal", "plan_output"),
     ("goal", "completion_report"),
     ("runtime", "feature_oracle"),
+    ("runtime", "context_profile"),
     ("runtime", "loop_contract"),
     ("runtime", "loop_state"),
     ("runtime", "progress_log"),
@@ -124,6 +125,7 @@ REQUIRED_JSON_PATHS = [
 ]
 
 RUNTIME_FILES = [
+    "context-profile.json",
     "source-packet.md",
     "loop-contract.json",
     "loop-state.json",
@@ -151,6 +153,7 @@ ACTOR_REPORT_REQUIRED_MARKERS = [
 
 NEXT_WINDOW_PROMPT_REQUIREMENTS = {
     "skill": ["prd-phase-harness"],
+    "context profile": ["context-profile.json", "context profile"],
     "target phase": ["target phase"],
     "target phase file": ["target phase file"],
     "loading order": ["loading order", "cold-start protocol"],
@@ -161,6 +164,7 @@ NEXT_WINDOW_PROMPT_REQUIREMENTS = {
     "evidence": ["evidence"],
     "continuity ledger": ["continuity-ledger", "continuity ledger"],
     "code summary writeback": ["source packet", "code facts", "code-summary", "summarize code"],
+    "progressive disclosure": ["progressive", "deferred", "only when", "do not load"],
     "stop conditions": ["stop conditions", "stop if", "stop and document"],
 }
 
@@ -194,18 +198,26 @@ RISK_GATE_RULES = {
     "security": ("validation", "compliance_gates"),
 }
 
-EXECUTION_READINESS_FILES = [
+HOT_READ_FIRST_FILES = [
+    "context-profile.json",
+    "loop-state.json",
+]
+
+DEFERRED_CONTEXT_FILES = [
     "README.md",
     "phase-manifest.md",
     "source-packet.md",
     "loop-contract.json",
-    "loop-state.json",
     "feature-oracle.json",
     "progress-log.md",
     "agent-handoff.md",
     "continuity-ledger.md",
     "next-window-prompt.md",
 ]
+
+READ_FIRST_MAX_FILES = 4
+PRIMARY_CONTEXT_MAX_ITEMS = 4
+COLD_START_MAX_FILES = 3
 
 EXECUTION_EVIDENCE_TERMS = [
     ("phase report", ["phase report"]),
@@ -304,6 +316,97 @@ def text_contains_any(text: str, alternatives: list[str]) -> bool:
     return any(alternative in lower for alternative in alternatives)
 
 
+def normalized_context_items(value: Any) -> list[str]:
+    return [str(item) for item in as_list(value) if str(item).strip()]
+
+
+def contains_file_name(items: list[str], file_name: str) -> bool:
+    lower_name = file_name.lower()
+    return any(lower_name in item.lower() for item in items)
+
+
+def validated_context_cap(caps: dict[str, Any], label: str, hard_max: int, errors: list[str]) -> int:
+    value = caps.get(label, hard_max)
+    if not isinstance(value, int) or value < 1:
+        errors.append(f"context-profile.json caps.{label} must be a positive integer")
+        return hard_max
+    if value > hard_max:
+        errors.append(f"context-profile.json caps.{label} must be <= hard cap {hard_max}")
+        return hard_max
+    return value
+
+
+def validate_context_profile(
+    folder: Path,
+    *,
+    allow_placeholders: bool,
+    strict: bool,
+) -> tuple[list[str], list[str]]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    if not strict or allow_placeholders:
+        return errors, warnings
+
+    profile, profile_errors = read_json_file(folder / "context-profile.json", "context-profile.json")
+    errors.extend(profile_errors)
+    if not profile:
+        return errors, warnings
+
+    for key in ["schema_version", "strategy", "cold_start", "roles", "deferred", "caps"]:
+        if key not in profile:
+            errors.append(f"context-profile.json missing {key}")
+    if "progressive" not in str(profile.get("strategy", "")).lower():
+        errors.append("context-profile.json strategy must state progressive disclosure")
+
+    caps = profile.get("caps", {}) if isinstance(profile.get("caps"), dict) else {}
+    cold_start_max = validated_context_cap(caps, "cold_start_max_files", COLD_START_MAX_FILES, errors)
+    validated_context_cap(caps, "read_first_max_files", READ_FIRST_MAX_FILES, errors)
+    validated_context_cap(caps, "primary_context_max_items", PRIMARY_CONTEXT_MAX_ITEMS, errors)
+
+    cold_start = profile.get("cold_start", {}) if isinstance(profile.get("cold_start"), dict) else {}
+    cold_files = normalized_context_items(cold_start.get("required_files"))
+    if len(cold_files) > cold_start_max:
+        errors.append(
+            f"context-profile.json cold_start.required_files exceeds cap {cold_start_max}: {len(cold_files)}"
+        )
+    for required in ["context-profile.json", "loop-state.json"]:
+        if not contains_file_name(cold_files, required):
+            errors.append(f"context-profile.json cold_start.required_files missing {required}")
+    for deferred_file in DEFERRED_CONTEXT_FILES:
+        if contains_file_name(cold_files, deferred_file):
+            errors.append(
+                f"context-profile.json cold_start.required_files must not eagerly load deferred file {deferred_file}"
+            )
+    if "target phase" not in textify(cold_files).lower() and "phase_file" not in textify(cold_files).lower():
+        errors.append("context-profile.json cold_start.required_files must include the target phase file token")
+
+    deferred = profile.get("deferred", {}) if isinstance(profile.get("deferred"), dict) else {}
+    deferred_text = textify(deferred).lower()
+    for deferred_file in DEFERRED_CONTEXT_FILES:
+        if deferred_file.lower() not in deferred_text:
+            errors.append(f"context-profile.json deferred context missing {deferred_file}")
+    if "do not load" not in deferred_text and "only when" not in deferred_text:
+        errors.append("context-profile.json deferred context must include load triggers")
+
+    roles = profile.get("roles", {}) if isinstance(profile.get("roles"), dict) else {}
+    for role in ["actor", "critic"]:
+        role_profile = roles.get(role)
+        if not isinstance(role_profile, dict):
+            errors.append(f"context-profile.json roles.{role} must be an object")
+            continue
+        required_files = normalized_context_items(role_profile.get("required_files"))
+        if len(required_files) > cold_start_max:
+            errors.append(
+                f"context-profile.json roles.{role}.required_files exceeds cap {cold_start_max}: {len(required_files)}"
+            )
+        if role == "actor" and any(contains_file_name(required_files, name) for name in ["source-packet.md", "continuity-ledger.md"]):
+            errors.append("context-profile.json actor role must not eagerly load source-packet.md or continuity-ledger.md")
+        if role == "critic" and not any("actor report" in item.lower() for item in required_files):
+            errors.append("context-profile.json critic role must require the actor report")
+
+    return errors, warnings
+
+
 def missing_next_window_prompt_content(text: str) -> list[str]:
     lower = text.lower()
     missing: list[str] = []
@@ -394,13 +497,34 @@ def validate_json_contract(
         if completion_report and not any(completion_report == str(output) for output in outputs):
             errors.append(f"{path.name} evidence.outputs must include goal.completion_report")
 
-        read_first_text = textify(get_path(data, ("context", "read_first"))).lower()
+        read_first_items = normalized_context_items(get_path(data, ("context", "read_first")))
+        read_first_text = textify(read_first_items).lower()
         phase_file_name = Path(str(phase.get("phase_file", path.name))).name
-        for required_file in [*EXECUTION_READINESS_FILES, phase_file_name]:
+        for required_file in [*HOT_READ_FIRST_FILES, phase_file_name]:
             if required_file.lower() not in read_first_text:
-                errors.append(f"{path.name} context.read_first missing execution file {required_file}")
+                errors.append(f"{path.name} context.read_first missing hot-path file {required_file}")
+        if len(read_first_items) > READ_FIRST_MAX_FILES:
+            errors.append(
+                f"{path.name} context.read_first exceeds progressive disclosure budget "
+                f"{READ_FIRST_MAX_FILES}: {len(read_first_items)}"
+            )
+        for deferred_file in DEFERRED_CONTEXT_FILES:
+            if deferred_file.lower() in read_first_text:
+                errors.append(
+                    f"{path.name} context.read_first eagerly loads deferred file {deferred_file}"
+                )
         if not is_concrete_list(get_path(data, ("context", "primary_context")), allow_placeholders=False):
             errors.append(f"{path.name} context.primary_context must be a non-empty concrete list")
+        primary_context_items = normalized_context_items(get_path(data, ("context", "primary_context")))
+        if len(primary_context_items) > PRIMARY_CONTEXT_MAX_ITEMS:
+            errors.append(
+                f"{path.name} context.primary_context exceeds budget {PRIMARY_CONTEXT_MAX_ITEMS}: "
+                f"{len(primary_context_items)}"
+            )
+        do_not_load_text = textify(get_path(data, ("context", "do_not_load_unless"))).lower()
+        for deferred_file in ["source-packet.md", "continuity-ledger.md", "feature-oracle.json", "progress-log.md"]:
+            if deferred_file not in do_not_load_text:
+                errors.append(f"{path.name} context.do_not_load_unless missing deferred trigger for {deferred_file}")
         if not is_concrete_list(get_path(data, ("boundaries", "likely_edit_paths")), allow_placeholders=False):
             errors.append(f"{path.name} boundaries.likely_edit_paths must be a non-empty concrete list")
         if not is_concrete_list(get_path(data, ("boundaries", "do_not_edit")), allow_placeholders=False):
@@ -422,7 +546,7 @@ def validate_json_contract(
         if not is_non_empty_text(str(get_path(data, ("evidence", "next_phase_handoff"))), allow_placeholders=False):
             errors.append(f"{path.name} evidence.next_phase_handoff must be concrete")
 
-        for runtime_key in ["feature_oracle", "loop_contract", "loop_state", "progress_log", "handoff", "continuity_ledger", "next_window_prompt"]:
+        for runtime_key in ["context_profile", "feature_oracle", "loop_contract", "loop_state", "progress_log", "handoff", "continuity_ledger", "next_window_prompt"]:
             runtime_path = runtime.get(runtime_key)
             if not is_non_empty_text(runtime_path, allow_placeholders=False):
                 errors.append(f"{path.name} runtime.{runtime_key} must name a concrete artifact path")
@@ -1134,6 +1258,14 @@ def validate_folder(
     )
     errors.extend(runtime_errors)
     warnings.extend(runtime_warnings)
+
+    profile_errors, profile_warnings = validate_context_profile(
+        folder,
+        allow_placeholders=allow_placeholders,
+        strict=strict,
+    )
+    errors.extend(profile_errors)
+    warnings.extend(profile_warnings)
 
     phase_ids: dict[str, Path] = {}
     deps: dict[str, list[str]] = {}
