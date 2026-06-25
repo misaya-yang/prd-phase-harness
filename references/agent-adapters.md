@@ -40,7 +40,7 @@ Claude Code workflows often have:
 
 Generated phases should keep context bounded so a subagent can execute a phase without polluting the main session.
 
-For Claude Code, keep `feature-oracle.json`, `progress-log.md`, `continuity-ledger.md`, and `agent-handoff.md` small enough for fast fresh-window loading. Use subagents for evaluator passes when the phase is UI-heavy, AI/eval-heavy, release-sensitive, or broad.
+For Claude Code, keep `feature-oracle.json`, `progress-log.md`, `continuity-ledger.md`, and `agent-handoff.md` small enough for fast fresh-window loading. Use subagents or fresh-context reviewers for completion critic passes; make the critic deeper when the phase is UI-heavy, AI/eval-heavy, release-sensitive, or broad.
 
 ## Subagent Guidance
 

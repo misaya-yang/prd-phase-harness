@@ -40,7 +40,7 @@ MINIMAL_CHANGE_GATE = (
     "changed files stay inside the smallest phase edit boundary; any expansion is justified in the phase report"
 )
 REVIEW_GATE = (
-    "self-review or evaluator review checks requirement coverage, test evidence, regression impact, and minimal-change scope"
+    "independent critic/subagent review checks actor output against requirement coverage, test evidence, regression impact, and minimal-change scope"
 )
 TERMINAL_REGRESSION_GATE = (
     "if this is the terminal phase or release gate, whole-demand regression across completed feature-oracle items is executed or blocked with evidence"
@@ -235,7 +235,7 @@ def phase_contract(
                 "run_baseline_check": True,
                 "update_progress_before_exit": True,
             },
-            "agent_roles": ["planner", "generator", "evaluator"],
+            "agent_roles": ["planner", "generator", "critic"],
         },
         "context": {
             "read_first": [
@@ -313,7 +313,7 @@ def phase_contract(
                 "continuity-ledger update",
                 "source-packet code summary",
                 "handoff update",
-                "review evidence",
+                "independent critic evidence",
                 "minimal-change scope note",
             ],
             "waiver_policy": "Only mark a gate waived when the user explicitly waives it or the report documents a blocker and remaining evidence.",
@@ -361,7 +361,7 @@ def main() -> int:
     parser.add_argument(
         "--no-report-template",
         action="store_true",
-        help="Do not create reports/phase-report-template.md",
+        help="Do not create report templates under reports/",
     )
     parser.add_argument(
         "--source-packet",
@@ -378,6 +378,7 @@ def main() -> int:
     output = Path(args.output).expanduser()
     reports_dir = output / "reports"
     report_template_path = reports_dir / "phase-report-template.md"
+    critic_template_path = reports_dir / "critic-verdict-template.md"
 
     output.mkdir(parents=True, exist_ok=True)
     if not args.no_report_template:
@@ -419,6 +420,7 @@ def main() -> int:
     output_files.extend(runtime_paths)
     if not args.no_report_template:
         output_files.append(report_template_path)
+        output_files.append(critic_template_path)
     if source_packet_enabled:
         output_files.append(source_packet_path)
     fail_if_exists(output_files, args.force)
@@ -511,7 +513,7 @@ def main() -> int:
             "CONTINUITY_LEDGER_PATH": f"{docs_path}/continuity-ledger.md",
             "NEXT_WINDOW_PROMPT_PATH": f"{docs_path}/next-window-prompt.md",
             "GOAL_PROMPT_EXAMPLE": goal_example,
-            "SHARED_AGENT_RULES": "- Use the exact phase `GOAL_PROMPT` when starting a goal.\n- Open only `READ_FIRST` and `PRIMARY_CONTEXT` before planning.\n- Make the smallest requirement-satisfying change.\n- Expand edit scope only when a blocker is documented.\n- Write test evidence, review evidence, and the phase report before moving on.\n- Run whole-demand regression in the terminal phase or release gate.",
+            "SHARED_AGENT_RULES": "- Use the exact phase `GOAL_PROMPT` when starting a goal.\n- Open only `READ_FIRST` and `PRIMARY_CONTEXT` before planning.\n- Make the smallest requirement-satisfying change.\n- Expand edit scope only when a blocker is documented.\n- Write test evidence, independent critic evidence, and the phase report before moving on.\n- Run whole-demand regression in the terminal phase or release gate.",
             "EXTERNAL_INPUTS_CHECKLIST": "- No external inputs are guaranteed by the scaffold.\n- Record missing credentials, dashboards, Figma links, deployment access, migrations, and provider approvals before use.",
         },
     )
@@ -554,7 +556,7 @@ def main() -> int:
             "Required validation evidence is recorded.",
             "Feature oracle status is passing, blocked, or waived.",
             "Source packet and continuity ledger contain current code facts and boundary decisions.",
-            "Review evidence and minimal-change scope notes are recorded.",
+            "Independent critic verdict and minimal-change scope notes are recorded.",
             "Terminal phase records whole-demand regression evidence or an explicit blocker.",
         ],
         "continue_when": [
@@ -591,7 +593,7 @@ def main() -> int:
         "schema_version": "prd-phase-harness/feature-oracle/v1",
         "instructions": {
             "allowed_edits": "Coding agents may update only status, evidence, and notes fields unless the user explicitly changes scope.",
-            "completion_rule": "A feature is passing only after end-to-end evidence exists.",
+            "completion_rule": "A feature is passing only after actor evidence exists and an independent critic artifact approves or waives completion.",
             "status_values": ["failing", "passing", "blocked", "waived"],
         },
         "features": [
@@ -679,6 +681,14 @@ def main() -> int:
             },
         )
         report_template_path.write_text(report_template, encoding="utf-8")
+        critic_template = render(
+            read_template("critic-verdict.template.md"),
+            {
+                "PHASE_ID": "PHASE-ID",
+                "PHASE_NAME": "Phase Name",
+            },
+        )
+        critic_template_path.write_text(critic_template, encoding="utf-8")
 
     phase_template = read_template("phase.template.md")
     for index, phase in enumerate(phases):
@@ -717,13 +727,13 @@ def main() -> int:
                 f"the {phase['depends_on']} phase report, progress-log entry, oracle evidence, and continuity-ledger boundary notes"
             )
         regression_scope = "Prior phase report evidence, feature-oracle status, and continuity-ledger boundaries remain valid."
-        acceptance_gates = "Phase report exists; validation or blocker evidence is recorded; oracle item, progress log, handoff, source packet, and continuity ledger are updated; minimal-change scope and review evidence are recorded."
+        acceptance_gates = "Phase report exists; validation or blocker evidence is recorded; oracle item, progress log, handoff, source packet, and continuity ledger are updated; minimal-change scope and independent critic verdict are recorded."
         test_and_regression = validation_requirement_text(args.validation_command)
         acceptance_criteria = (
             f"- {current_feature_id} has evidence or a documented blocker.\n"
             f"- `{docs_path}/{phase['report']}` exists or is named as blocked evidence.\n"
             "- `source-packet.md`, `continuity-ledger.md`, `progress-log.md`, and `agent-handoff.md` reflect the latest code facts and next action.\n"
-            "- Minimal-change scope and review/test evidence are recorded."
+            "- Minimal-change scope, test evidence, and independent critic verdict are recorded."
         )
         if is_terminal:
             regression_scope += f" {TERMINAL_REGRESSION_GATE}."
@@ -791,6 +801,7 @@ def main() -> int:
     print(f"Phases: {', '.join(phase['id'] for phase in phases)}")
     if not args.no_report_template:
         print(f"Report template: {report_template_path}")
+        print(f"Critic template: {critic_template_path}")
     if source_packet_enabled:
         print(f"Source packet: {source_packet_path}")
     print("Runtime artifacts: loop-contract.json, loop-state.json, feature-oracle.json, progress-log.md, agent-handoff.md, continuity-ledger.md, next-window-prompt.md")

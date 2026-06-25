@@ -37,7 +37,7 @@ Create the runtime artifacts before or alongside the phase map:
 
 - `feature-oracle.json`: observable end-to-end cases, all initially `failing` unless evidence already exists.
 - `progress-log.md`: current phase, active oracle item, clean-state note, blockers, and session log.
-- `agent-handoff.md`: planner, generator, and evaluator notes with the next handoff target.
+- `agent-handoff.md`: planner, generator, and critic notes with the next handoff target.
 - `continuity-ledger.md`: phase-to-feature chain, dependency handoff boundary, code-summary writeback, and interface decisions.
 - `next-window-prompt.md`: copy-ready prompt for a fresh agent window.
 
@@ -47,6 +47,7 @@ Feature-oracle rules:
 - Include `id`, `category`, `description`, `steps`, `status`, `evidence`, and optional `notes`.
 - Allow later coding agents to update only `status`, `evidence`, and `notes` unless the user changes scope.
 - Require evidence before `passing` or `waived`.
+- Require `passing` or `waived` evidence to cite a phase report whose `Status` is also `passed` or `waived`.
 - Keep blocked cases visible; do not delete them to make the roadmap look complete.
 
 ## 4. Phase Map
@@ -107,9 +108,9 @@ Use the simplest useful agent structure:
 
 - Planner: expand rough intent into source packet, phase map, feature oracle, and contracts.
 - Generator: execute one phase and one oracle case, update evidence, and write the phase report.
-- Evaluator: independently inspect files, validation output, runtime behavior, and oracle evidence.
+- Critic: independently inspect files, validation output, runtime behavior, actor report, and oracle evidence.
 
-For simple low-risk phases, a single agent can execute after objective validation. For broad, UI-heavy, AI/eval, migration, release, or ambiguous tasks, keep evaluator work independent and file-based.
+For simple low-risk phases, a single actor can execute after objective validation, but completion still requires an independent critic artifact. For broad, UI-heavy, AI/eval, migration, release, or ambiguous tasks, keep critic work deeper, independent, and file-based.
 
 Before implementation begins, write or require a sprint/phase contract that names:
 
@@ -118,6 +119,7 @@ Before implementation begins, write or require a sprint/phase contract that name
 - continuity ledger entry and source-packet code-summary writeback
 - validation commands and runtime checks
 - review and minimal-change acceptance gates
+- independent critic verdict requirements
 - acceptance and rejection criteria
 - evidence output
 
@@ -131,7 +133,7 @@ Require these gates when risk tags appear:
 | `auth`, `security` | Permission, session, rate-limit, enumeration, secret, and failure-mode checks. |
 | `payment` | Webhook, idempotency, test-mode, permission, audit, rollback, and no-real-charge checks. |
 | `database`, `migration` | Migration dry-run, rollback, idempotency, data cleanup, production approval. |
-| `ai`, `agent`, `llm`, `eval` | Golden questions, trace capture, tool/source boundaries, refusal/privacy behavior, cost/quota checks, evaluator handoff. |
+| `ai`, `agent`, `llm`, `eval` | Golden questions, trace capture, tool/source boundaries, refusal/privacy behavior, cost/quota checks, critic handoff. |
 | `external-service` | Provider readiness, credentials boundary, dashboard action approval, offline/mock path. |
 | `release` | Build, smoke, deployment gate, monitoring/logging, rollback, known-blocker report. |
 
@@ -141,6 +143,20 @@ Run:
 
 ```bash
 python3 <skill-dir>/scripts/validate_harness_prd.py docs/<topic> --strict --quality-score
+```
+
+This validates that the harness is executable. It does not prove the user goal is done.
+
+Before declaring one phase complete or unlocked, run:
+
+```bash
+python3 <skill-dir>/scripts/validate_harness_prd.py docs/<topic> --strict --completion-gate --phase <PHASE_ID> --quality-score
+```
+
+Before declaring the full demand, release gate, or goal complete, run:
+
+```bash
+python3 <skill-dir>/scripts/validate_harness_prd.py docs/<topic> --strict --completion-gate --quality-score
 ```
 
 If the folder is intentionally only a scaffold, run with `--allow-placeholders` and explicitly tell the user it is not a finished harness.

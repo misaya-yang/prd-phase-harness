@@ -41,7 +41,7 @@ Every finished harness must be:
 - Verifiable and observable: commands, runtime checks, regression scope, evidence outputs, blockers, and acceptance gates are concrete.
 - Loop-driven: agents follow `observe -> select -> execute -> verify -> record -> decide`.
 - Compaction-resilient: requirements, decisions, code facts, validation results, review findings, blockers, and next actions are written to files.
-- Review-and-test complete: each phase has review evidence, test evidence or a blocker, and the terminal phase includes whole-demand regression over completed oracle items.
+- Critic-and-test complete: each phase has independent critic evidence, test evidence or a blocker, and the terminal phase includes whole-demand regression over completed oracle items.
 - Safe and portable: untrusted inputs, secrets, destructive commands, external services, migrations, deployment, and Agent Skills portability are gated.
 
 ## Builder Protocol
@@ -138,10 +138,25 @@ Validate final harnesses:
 python3 <skill-dir>/scripts/validate_harness_prd.py docs/new_feature_harness --strict --quality-score
 ```
 
+Validate a phase or full-demand completion claim:
+
+```bash
+# One phase is ready to unlock dependents.
+python3 <skill-dir>/scripts/validate_harness_prd.py docs/new_feature_harness \
+  --strict --completion-gate --phase NF-02 --quality-score
+
+# The full demand is ready to call done.
+python3 <skill-dir>/scripts/validate_harness_prd.py docs/new_feature_harness \
+  --strict --completion-gate --quality-score
+```
+
+`--strict` proves the harness structure is executable. It is not completion proof.
+Use `--completion-gate` before saying a phase, release gate, or full user goal is complete.
+
 ## Resource Map
 
 - `references/builder-protocol.md`: intake, source packet, risk classifier, phase map, feature oracle.
-- `references/long-running-agent-protocol.md`: loop contract, loop state, session boot, feature oracle, progress log, continuity ledger, planner/generator/evaluator loop, next-window prompts.
+- `references/long-running-agent-protocol.md`: loop contract, loop state, session boot, feature oracle, progress log, continuity ledger, planner/generator/critic loop, next-window prompts.
 - `references/phase-folder-spec.md`: folder, README, manifest, phase, report, and status schema.
 - `references/phase-contract-schema.md`: JSON contract fields and risk-triggered required gates.
 - `references/phase-runner-protocol.md`: goal-mode execution, report writing, blockers, dependency unlock.
@@ -161,13 +176,16 @@ Before claiming the harness is ready:
 - `python3 -m py_compile scripts/*.py` passes.
 - Scaffold smoke test passes validator with `--allow-placeholders`.
 - A filled harness passes validator with `--strict`.
+- Any claimed phase completion passes `--strict --completion-gate --phase <PHASE_ID>`.
+- Any claimed full-demand, release, or goal completion passes `--strict --completion-gate`.
 - Runtime files exist: `source-packet.md`, `loop-contract.json`, `loop-state.json`, `feature-oracle.json`, `progress-log.md`, `agent-handoff.md`, `continuity-ledger.md`, and `next-window-prompt.md`.
 - Loop contract includes observe, select, execute, verify, record, and decide; loop state points to an existing phase and feature.
 - Each phase has cross-phase continuity and code-summary writeback instructions that name source packet, continuity ledger, report, oracle, progress log, and handoff updates.
 - No final phase relies only on a scaffold validation-discovery command; concrete checks are recorded, or the blocker is explicit.
 - Terminal phase or release gate records whole-demand regression across completed oracle items.
-- Each phase report includes test evidence, review evidence, and minimal-change scope notes or a blocker.
-- Passing or waived feature-oracle items have evidence; agents are not instructed to delete cases to shrink scope.
+- Each phase report includes test evidence, independent critic evidence, and minimal-change scope notes or a blocker.
+- Passing or waived feature-oracle items have evidence pointing to an actor report with `Status: passed` or `Status: waived` and a separate critic artifact with `Critic Verdict: approved` or `waived`; agents are not instructed to delete cases to shrink scope.
+- Independent critic artifacts include critic identity/role, verdict, phase, feature, actor report reviewed, findings, and waiver reason when waived.
 - The next-window prompt is copy-ready and points to the first executable phase or the requested target phase.
 - Broken harness fixtures fail for missing contract fields, dependency cycles, vague gates, bad paths, and placeholder leakage.
 - README, manifest, each phase, and report template all agree on phase IDs, files, dependencies, and evidence paths.

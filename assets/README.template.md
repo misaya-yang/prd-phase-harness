@@ -31,7 +31,8 @@ rg -n "PHASE_ID: <ID>|GOAL_PROMPT|VALIDATION_COMMANDS|ACCEPTANCE_GATES" {{DOCS_P
 8. Complete validation, browser/runtime checks, regression scope, review, compliance gates, rollback notes, evidence output, and acceptance gates before claiming completion.
 9. Summarize code facts and boundary decisions back into `source-packet.md` and `continuity-ledger.md`.
 10. Update `progress-log.md`, `agent-handoff.md`, the phase report, and only the relevant feature `status`/`evidence` fields in `feature-oracle.json`.
-11. Move to the next phase only after dependency gates are met or explicitly waived in a report.
+11. Run `--strict --completion-gate --phase <PHASE_ID>` before declaring a phase complete or unlocked.
+12. Move to the next phase only after dependency gates are met or explicitly waived in a report.
 
 ## Long-Running Runtime Protocol
 
@@ -44,7 +45,7 @@ Each fresh session must start from durable files instead of hidden chat context 
 - Run the baseline or smoke check named by the target phase before adding new changes.
 - Work on one phase and one feature-oracle item at a time.
 - Make the smallest requirement-satisfying change and record any scope expansion in the phase report.
-- Mark oracle items `passing` only when evidence points to a command, report, screenshot, trace, or log.
+- Mark oracle items `passing` only when evidence points to an actor report with `Status: passed` and an independent critic artifact with `Critic Verdict: approved` or `waived`.
 - Leave the repo in a clean, restartable state or document the blocker in the phase report.
 
 ## Runtime Artifacts
@@ -55,7 +56,7 @@ Each fresh session must start from durable files instead of hidden chat context 
 | `{{LOOP_STATE_PATH}}` | Current phase, feature, iteration, status, last decision, and next action. |
 | `{{FEATURE_ORACLE_PATH}}` | End-to-end feature/test oracle. Agents may update status and evidence, not delete cases. |
 | `{{PROGRESS_LOG_PATH}}` | Chronological progress, current blocker, and clean-state notes for the next session. |
-| `{{AGENT_HANDOFF_PATH}}` | File-based planner/generator/evaluator handoff packet. |
+| `{{AGENT_HANDOFF_PATH}}` | File-based planner/generator/critic handoff packet. |
 | `{{CONTINUITY_LEDGER_PATH}}` | Cross-phase continuity, code summary writeback, and interface boundary ledger. |
 | `{{NEXT_WINDOW_PROMPT_PATH}}` | Copy-ready prompt for starting the next agent window. |
 
@@ -85,9 +86,10 @@ Each fresh session must start from durable files instead of hidden chat context 
 
 - Every phase must be executable and verifiable on its own.
 - Every phase must inherit prior evidence and record what it unlocks next.
-- Every implementation must include test evidence and review evidence or an explicit blocker.
+- Every implementation must include test evidence and independent critic evidence or an explicit blocker.
 - The terminal phase or release gate must run whole-demand regression across completed feature-oracle items.
 - Runtime files must be current enough for a fresh agent to resume after context compaction.
+- `--strict` is structure readiness, not completion proof; phase or full-demand completion requires `--completion-gate`.
 
 ## New Window Prompt
 

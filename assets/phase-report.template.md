@@ -4,6 +4,8 @@
 
 **Status:** TODO: passed, blocked, partial, or waived
 
+`passed` requires `--strict --completion-gate --phase {{PHASE_ID}}` after this report and `feature-oracle.json` are updated.
+
 **Date:** TODO
 
 ---
@@ -27,19 +29,26 @@ TODO: List files changed and why.
 | Validation | TODO | TODO | TODO |
 | Regression | TODO | TODO | TODO |
 | Browser/Runtime | TODO | TODO | TODO |
-| Review | TODO | TODO | TODO |
+| Critic | TODO: separate critic artifact | TODO | TODO |
 | Compliance | TODO | TODO | TODO |
 | Acceptance | TODO | TODO | TODO |
 
 ## Minimal Change and Review
 
-TODO: State why the changed files are the smallest sufficient change for this phase, and link the self-review or evaluator review notes.
+TODO: State why the changed files are the smallest sufficient change for this phase, and link the independent critic/subagent review artifact.
+
+## Independent Critic Review
+
+- Critic artifact: TODO: link the separate independent critic artifact after the critic completes.
+- Critic scope requested: actor report, changed files or diff, validation evidence, feature oracle item, minimal-change boundary, and regression impact.
 
 ## Feature Oracle Updates
 
 | Feature ID | Old Status | New Status | Evidence |
 | --- | --- | --- | --- |
 | TODO | TODO | TODO | TODO |
+
+Evidence for `passing` or `waived` must include this actor report path, the independent critic artifact, and the supporting command, browser/runtime, or waiver artifact.
 
 ## Progress Log Update
 

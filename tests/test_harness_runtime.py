@@ -39,6 +39,58 @@ def update_phase_contract(phase_path: Path, update: Callable[[dict[str, Any]], N
     )
 
 
+def actor_report_text(status: str = "passed", *, whole_demand: bool = False) -> str:
+    whole = (
+        "\n## Whole-Demand Regression\n\n"
+        "whole-demand regression: passed for all completed feature-oracle items, including RT-F001.\n"
+        if whole_demand
+        else ""
+    )
+    return (
+        "# RT-00 Actor Report\n\n"
+        f"**Status:** {status}\n\n"
+        "## Summary\n\n"
+        "The actor completed the bounded phase work and recorded durable evidence for critic review.\n\n"
+        "## Validation Evidence\n\n"
+        "| Gate | Command or Check | Result | Notes |\n"
+        "| --- | --- | --- | --- |\n"
+        "| Unit | python3 -m unittest discover tests | passed | Output captured in this report. |\n"
+        "| Regression | targeted harness regression | passed | Existing runtime behavior stayed stable. |\n\n"
+        "## Minimal Change and Review\n\n"
+        "Changed files stayed inside the phase boundary. No unrelated refactor, rename, or public contract change was included.\n\n"
+        "## Feature Oracle Updates\n\n"
+        "| Feature ID | Old Status | New Status | Evidence |\n"
+        "| --- | --- | --- | --- |\n"
+        "| RT-F001 | failing | passing | Actor report plus independent critic artifact. |\n"
+        f"{whole}"
+    )
+
+
+def critic_report_text(
+    actor_report: Path,
+    *,
+    verdict: str = "approved",
+    include_actor_report: bool = True,
+    whole_demand: bool = False,
+) -> str:
+    actor_line = f"Actor Report Reviewed: {actor_report}\n\n" if include_actor_report else ""
+    whole = (
+        "Whole-demand regression reviewed: whole-demand regression evidence was present and coherent.\n\n"
+        if whole_demand
+        else ""
+    )
+    return (
+        "# RT-00 Critic Review\n\n"
+        "Critic: independent-subagent\n\n"
+        f"Critic Verdict: {verdict}\n\n"
+        "Phase: RT-00\n\n"
+        "Feature: RT-F001\n\n"
+        f"{actor_line}"
+        "Findings: actor report, changed-file scope, validation evidence, feature oracle status, and regression impact were reviewed.\n\n"
+        f"{whole}"
+    )
+
+
 def write_minimal_harness(
     folder: Path,
     *,
@@ -85,7 +137,7 @@ def write_minimal_harness(
                 "run_baseline_check": True,
                 "update_progress_before_exit": True,
             },
-            "agent_roles": ["planner", "generator", "evaluator"],
+            "agent_roles": ["planner", "generator", "critic"],
         },
         "context": {
             "read_first": [
@@ -143,7 +195,7 @@ def write_minimal_harness(
             "compliance_gates": ["no secrets are read or written"],
             "acceptance_gates": [
                 "source packet and runtime files are present",
-                "review evidence confirms requirement coverage",
+                "independent critic evidence confirms requirement coverage",
                 "minimal-change scope note is recorded",
                 "whole-demand regression is recorded for terminal completion",
             ],
@@ -158,7 +210,7 @@ def write_minimal_harness(
                 "continuity-ledger update",
                 "source-packet code summary",
                 "handoff update",
-                "review evidence",
+                "independent critic evidence",
                 "minimal-change scope note",
             ],
             "waiver_policy": "Document waived gates with user, reason, risk, and dependent phase impact.",
@@ -201,7 +253,7 @@ def write_minimal_harness(
 - REGRESSION_SCOPE: existing validator behavior remains stable; terminal whole-demand regression covers completed feature-oracle items
 - COMPLIANCE_GATES: no secrets are read or written
 - ROLLBACK_PLAN: revert docs-only changes
-- ACCEPTANCE_GATES: source packet and runtime files are present; review evidence confirms requirement coverage; minimal-change scope note is recorded; whole-demand regression is recorded for terminal completion
+- ACCEPTANCE_GATES: source packet and runtime files are present; independent critic evidence confirms requirement coverage; minimal-change scope note is recorded; whole-demand regression is recorded for terminal completion
 - EVIDENCE_OUTPUT: `{docs_path}/reports/rt-00-baseline-audit-report.md`
 - STOP_CONDITIONS: credentials are required
 
@@ -234,7 +286,7 @@ Write evidence that future agents can load without hidden chat context.
 
 ## Test and Regression Requirements
 
-Run `python3 -m unittest discover tests` and record review evidence, minimal-change scope, and terminal whole-demand regression.
+Run `python3 -m unittest discover tests` and record independent critic evidence, minimal-change scope, and terminal whole-demand regression.
 
 ## Compliance and Safety Requirements
 
@@ -578,6 +630,187 @@ class HarnessRuntimeTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("Harness validation passed", result.stdout)
 
+    def test_completion_gate_accepts_verified_feature_and_passed_report(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            report_path = folder / "reports" / "rt-00-baseline-audit-report.md"
+            report_path.write_text(actor_report_text(whole_demand=True), encoding="utf-8")
+            critic_path = folder / "reports" / "rt-00-critic-review.md"
+            critic_path.write_text(critic_report_text(report_path, whole_demand=True), encoding="utf-8")
+            oracle = json.loads((folder / "feature-oracle.json").read_text(encoding="utf-8"))
+            oracle["features"][0]["status"] = "passing"
+            oracle["features"][0]["evidence"] = [str(report_path), str(critic_path)]
+            (folder / "feature-oracle.json").write_text(json.dumps(oracle, indent=2), encoding="utf-8")
+            state = json.loads((folder / "loop-state.json").read_text(encoding="utf-8"))
+            state["status"] = "verified"
+            (folder / "loop-state.json").write_text(json.dumps(state, indent=2), encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict", "--completion-gate", "--quality-score")
+
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("Harness validation passed", result.stdout)
+
+    def test_completion_gate_rejects_unfinished_oracle_and_running_loop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict", "--completion-gate")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("completion gate requires loop-state.status verified or waived; found planned", result.stdout)
+            self.assertIn("completion gate requires feature RT-F001 (RT-00) to be passing or waived; found failing", result.stdout)
+            self.assertIn("completion gate requires feature RT-F001 to cite report and critic artifacts", result.stdout)
+
+    def test_completion_gate_rejects_passing_feature_with_blocked_report(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            report_path = folder / "reports" / "rt-00-baseline-audit-report.md"
+            report_path.write_text(actor_report_text(status="blocked"), encoding="utf-8")
+            critic_path = folder / "reports" / "rt-00-critic-review.md"
+            critic_path.write_text(critic_report_text(report_path), encoding="utf-8")
+            oracle = json.loads((folder / "feature-oracle.json").read_text(encoding="utf-8"))
+            oracle["features"][0]["status"] = "passing"
+            oracle["features"][0]["evidence"] = [str(report_path), str(critic_path)]
+            (folder / "feature-oracle.json").write_text(json.dumps(oracle, indent=2), encoding="utf-8")
+            state = json.loads((folder / "loop-state.json").read_text(encoding="utf-8"))
+            state["status"] = "verified"
+            (folder / "loop-state.json").write_text(json.dumps(state, indent=2), encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict", "--completion-gate", "--quality-score")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("completion gate feature RT-F001 cites incomplete report", result.stdout)
+            self.assertIn("blocked", result.stdout)
+            self.assertIn("Quality score: 49 (not-ready)", result.stdout)
+
+    def test_completion_gate_rejects_actor_report_without_critic_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            report_path = folder / "reports" / "rt-00-baseline-audit-report.md"
+            report_path.write_text(actor_report_text(whole_demand=True), encoding="utf-8")
+            oracle = json.loads((folder / "feature-oracle.json").read_text(encoding="utf-8"))
+            oracle["features"][0]["status"] = "passing"
+            oracle["features"][0]["evidence"] = str(report_path)
+            (folder / "feature-oracle.json").write_text(json.dumps(oracle, indent=2), encoding="utf-8")
+            state = json.loads((folder / "loop-state.json").read_text(encoding="utf-8"))
+            state["status"] = "verified"
+            (folder / "loop-state.json").write_text(json.dumps(state, indent=2), encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict", "--completion-gate")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("completion gate requires feature RT-F001 to cite an independent critic artifact", result.stdout)
+
+    def test_completion_gate_rejects_critic_changes_requested(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            report_path = folder / "reports" / "rt-00-baseline-audit-report.md"
+            report_path.write_text(actor_report_text(whole_demand=True), encoding="utf-8")
+            critic_path = folder / "reports" / "rt-00-critic-review.md"
+            critic_path.write_text(critic_report_text(report_path, verdict="changes requested"), encoding="utf-8")
+            oracle = json.loads((folder / "feature-oracle.json").read_text(encoding="utf-8"))
+            oracle["features"][0]["status"] = "passing"
+            oracle["features"][0]["evidence"] = [str(report_path), str(critic_path)]
+            (folder / "feature-oracle.json").write_text(json.dumps(oracle, indent=2), encoding="utf-8")
+            state = json.loads((folder / "loop-state.json").read_text(encoding="utf-8"))
+            state["status"] = "verified"
+            (folder / "loop-state.json").write_text(json.dumps(state, indent=2), encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict", "--completion-gate")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("completion gate critic rejected feature RT-F001", result.stdout)
+            self.assertIn("changes_requested", result.stdout)
+
+    def test_completion_gate_rejects_actor_report_with_embedded_critic_verdict(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            report_path = folder / "reports" / "rt-00-baseline-audit-report.md"
+            report_path.write_text(
+                actor_report_text()
+                + "\nCritic: independent-subagent\n\n"
+                + "Critic Verdict: approved\n\n"
+                + "Phase: RT-00\n\n"
+                + "Feature: RT-F001\n\n",
+                encoding="utf-8",
+            )
+            oracle = json.loads((folder / "feature-oracle.json").read_text(encoding="utf-8"))
+            oracle["features"][0]["status"] = "passing"
+            oracle["features"][0]["evidence"] = str(report_path)
+            (folder / "feature-oracle.json").write_text(json.dumps(oracle, indent=2), encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict", "--completion-gate", "--phase", "RT-00")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("requires separate actor and critic artifacts", result.stdout)
+
+    def test_completion_gate_rejects_evidence_thin_actor_report(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            report_path = folder / "reports" / "rt-00-baseline-audit-report.md"
+            critic_path = folder / "reports" / "rt-00-critic-review.md"
+            report_path.write_text("# RT-00 Report\n\n**Status:** passed\n", encoding="utf-8")
+            critic_path.write_text(critic_report_text(report_path), encoding="utf-8")
+            oracle = json.loads((folder / "feature-oracle.json").read_text(encoding="utf-8"))
+            oracle["features"][0]["status"] = "passing"
+            oracle["features"][0]["evidence"] = [str(report_path), str(critic_path)]
+            (folder / "feature-oracle.json").write_text(json.dumps(oracle, indent=2), encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict", "--completion-gate", "--phase", "RT-00")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("actor report for feature RT-F001 is evidence-thin", result.stdout)
+
+    def test_completion_gate_rejects_critic_without_actor_report_reference(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            report_path = folder / "reports" / "rt-00-baseline-audit-report.md"
+            critic_path = folder / "reports" / "rt-00-critic-review.md"
+            report_path.write_text(actor_report_text(), encoding="utf-8")
+            critic_path.write_text(
+                critic_report_text(report_path, include_actor_report=False),
+                encoding="utf-8",
+            )
+            oracle = json.loads((folder / "feature-oracle.json").read_text(encoding="utf-8"))
+            oracle["features"][0]["status"] = "passing"
+            oracle["features"][0]["evidence"] = [str(report_path), str(critic_path)]
+            (folder / "feature-oracle.json").write_text(json.dumps(oracle, indent=2), encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict", "--completion-gate", "--phase", "RT-00")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("must reference the reviewed actor report path", result.stdout)
+
+    def test_full_completion_gate_rejects_missing_terminal_whole_demand_regression(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "runtime_harness"
+            write_minimal_harness(folder, include_runtime_files=True)
+            report_path = folder / "reports" / "rt-00-baseline-audit-report.md"
+            critic_path = folder / "reports" / "rt-00-critic-review.md"
+            report_path.write_text(actor_report_text(), encoding="utf-8")
+            critic_path.write_text(critic_report_text(report_path), encoding="utf-8")
+            oracle = json.loads((folder / "feature-oracle.json").read_text(encoding="utf-8"))
+            oracle["features"][0]["status"] = "passing"
+            oracle["features"][0]["evidence"] = [str(report_path), str(critic_path)]
+            (folder / "feature-oracle.json").write_text(json.dumps(oracle, indent=2), encoding="utf-8")
+            state = json.loads((folder / "loop-state.json").read_text(encoding="utf-8"))
+            state["status"] = "verified"
+            (folder / "loop-state.json").write_text(json.dumps(state, indent=2), encoding="utf-8")
+
+            result = run_cmd(str(VALIDATOR), str(folder), "--strict", "--completion-gate")
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("terminal actor report with non-placeholder whole-demand regression evidence", result.stdout)
+            self.assertIn("terminal independent critic approval of whole-demand regression evidence", result.stdout)
+
     def test_strict_validation_rejects_thin_next_window_prompt(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp) / "runtime_harness"
@@ -673,8 +906,8 @@ class HarnessRuntimeTests(unittest.TestCase):
             write_minimal_harness(folder, include_runtime_files=True)
             phase_path = folder / "phase-00-baseline-audit.md"
             phase_text = phase_path.read_text(encoding="utf-8")
-            phase_text = phase_text.replace("review evidence confirms requirement coverage", "phase evidence confirms requirement coverage")
-            phase_text = phase_text.replace('"review evidence",', '"phase evidence",')
+            phase_text = phase_text.replace("independent critic evidence confirms requirement coverage", "phase evidence confirms requirement coverage")
+            phase_text = phase_text.replace('"independent critic evidence",', '"phase evidence",')
             phase_text = phase_text.replace("minimal-change scope note is recorded", "scope note is recorded")
             phase_text = phase_text.replace('"minimal-change scope note",', '"scope note",')
             phase_text = phase_text.replace("minimal-change", "scope")
@@ -683,7 +916,7 @@ class HarnessRuntimeTests(unittest.TestCase):
             result = run_cmd(str(VALIDATOR), str(folder), "--strict")
 
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("phase-00-baseline-audit.md missing review evidence gate", result.stdout)
+            self.assertIn("phase-00-baseline-audit.md missing independent critic evidence gate", result.stdout)
             self.assertIn("phase-00-baseline-audit.md missing minimal-change scope gate", result.stdout)
 
     def test_strict_validation_rejects_terminal_phase_without_whole_demand_regression(self) -> None:

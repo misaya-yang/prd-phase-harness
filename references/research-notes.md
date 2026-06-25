@@ -39,7 +39,7 @@ Map the research concepts into docs like this:
 | Control loop | loop contract, loop state, observe/select/execute/verify/record/decide cycle |
 | Observability | screenshots, traces, logs, eval tables, command summaries |
 | Failure attribution | blocker notes, stop conditions, failed gate explanations |
-| Verification | tests, regression scope, acceptance gates |
+| Verification | tests, regression scope, acceptance gates, completion gate |
 | Permissions | edit boundaries, do-not-edit paths, approval requirements |
 | Entropy auditing | release gates, drift checks, freshness checks, repeated validation |
 | Intervention recording | user waivers, scope changes, external approvals in reports |
@@ -59,6 +59,10 @@ Map the research concepts into docs like this:
 - Anthropic, Harness design for long-running applications: https://www.anthropic.com/engineering/harness-design-long-running-apps
 - Anthropic, Effective context engineering for AI agents: https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
 - Anthropic, Demystifying evals for AI agents: https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents
+- OpenAI, A practical guide to building agents: https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/
+- Google ADK, Why evaluate agents: https://adk.dev/evaluate/
+- Google Cloud, Evaluate Gen AI agents: https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/evaluation-agents
+- Microsoft Foundry, Agentic Workflows Task Adherence: https://learn.microsoft.com/en-us/azure/foundry/guardrails/task-adherence
 - Agent Skills specification: https://agentskills.io/specification
 - Agent Skills evaluation guidance: https://agentskills.io/skill-creation/evaluating-skills
 - AI Harness Engineering, arXiv 2605.13357: identifies task specification, context selection, tool access, project memory, task state, observability, failure attribution, verification, permissions, entropy auditing, and intervention recording as harness responsibilities.
@@ -72,9 +76,11 @@ For long-running coding work:
 - Write a loop contract and loop state so agents execute a workflow rather than merely following a prompt.
 - Keep one phase and one oracle item as the atomic execution unit.
 - Ask the runner to run baseline/smoke checks before new work.
-- Use a separate evaluator when UI behavior, agent behavior, migration safety, release readiness, or subjective quality is part of completion.
+- Use a separate critic/subagent when UI behavior, agent behavior, migration safety, release readiness, or subjective quality is part of completion.
 - Make the next-window prompt concrete enough that the next agent does not need the current chat.
 - Require agents to summarize inspected code facts back into durable files before handoff; otherwise phases drift into isolated PRDs instead of a connected execution chain.
+- Treat structural validation and completion proof as separate gates. `--strict` answers "can a fresh agent execute this harness?" `--completion-gate` answers "may this phase or full demand be called done?"
+- Require `feature-oracle.json` passing evidence to cite a report whose `Status` is `passed` or `waived`; a blocked or partial report must keep the oracle item blocked/failing.
 
 For a full PRD:
 
@@ -116,3 +122,5 @@ For frontend features:
 - Using "works well" or "improve UX" as an acceptance gate.
 - Leaving future ideas in executable scope.
 - Marking oracle items `passing` without evidence.
+- Treating an excellent structural score as release readiness while `loop-state.json` is still `running` or `needs_evaluation`.
+- Letting a phase report say `Status: blocked` while the matching feature-oracle item says `passing`.

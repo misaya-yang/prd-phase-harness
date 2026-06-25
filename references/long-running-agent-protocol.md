@@ -7,7 +7,7 @@ Use this when a harness must support multiple sessions, subagents, or independen
 A long-running coding harness should preserve state in files, not in chat memory or pre-compaction context:
 
 ```text
-source packet -> loop contract -> loop state -> feature oracle -> continuity ledger -> phase contract -> session boot -> one-feature execution -> evaluator review -> report -> handoff
+source packet -> loop contract -> loop state -> feature oracle -> continuity ledger -> phase contract -> session boot -> one-feature execution -> actor report -> independent critic verdict -> handoff
 ```
 
 This follows two practical findings from modern agent harness work:
@@ -24,7 +24,7 @@ This follows two practical findings from modern agent harness work:
 | `loop-state.json` | Active phase, feature, iteration, status, last decision, and next action. | Runners update after each decision and before exit. |
 | `feature-oracle.json` | End-to-end feature and test cases. | Runners update only `status`, `evidence`, and `notes`. |
 | `progress-log.md` | Session history, current blocker, clean-state note. | Append at start/end of work. |
-| `agent-handoff.md` | Planner/generator/evaluator file-based messages. | Keep brief and actionable. |
+| `agent-handoff.md` | Planner/generator/critic file-based messages. | Keep brief and actionable. |
 | `continuity-ledger.md` | Cross-phase relatedness, code-summary writeback, and interface boundary decisions. | Update when code facts, contracts, phase dependencies, or downstream assumptions change. |
 | `next-window-prompt.md` | Copy-ready fresh-window prompt. | Update when the active target phase changes. |
 
@@ -40,7 +40,7 @@ Every fresh agent should:
 6. Pick one phase and one feature-oracle item.
 7. Execute the loop cycle: observe, select, execute, verify, record, decide.
 8. Make the smallest requirement-satisfying change, then write inspected code facts and interface decisions back into `source-packet.md` and `continuity-ledger.md` before handoff.
-9. Record test evidence, review evidence, and minimal-change scope before marking the phase passed.
+9. Record test evidence and minimal-change scope, then request an independent critic/subagent review before marking the phase passed.
 
 If baseline checks fail, fix or document that state before starting new feature work.
 
@@ -68,7 +68,7 @@ Write oracle cases as observable behavior:
 Status policy:
 
 - `failing`: default for unverified work.
-- `passing`: requires command, browser/runtime, trace, screenshot, report, or log evidence.
+- `passing`: requires actor evidence plus an independent critic artifact with `Critic Verdict: approved`.
 - `blocked`: requires a named blocker and next action.
 - `waived`: requires user waiver, reason, and residual risk.
 
@@ -92,7 +92,7 @@ Use the loop contract to make the workflow executable instead of prompt-only:
 
 Never remove `verify`, `record`, or `decide` from the cycle. Without those steps the harness becomes a prompt again.
 
-## Planner/Generator/Evaluator Loop
+## Planner/Generator/Critic Loop
 
 Use this loop when work is complex enough to justify more than one role:
 
@@ -100,9 +100,9 @@ Use this loop when work is complex enough to justify more than one role:
 2. Generator proposes a phase contract or plan before editing.
 3. Evaluator reviews the proposed contract before implementation when the source is ambiguous or the risk is high.
 4. Generator implements one target item and writes evidence.
-5. Evaluator independently checks the runtime, changed files, report, and oracle status.
-6. Evaluator checks minimal-change scope, test coverage, and regression impact.
-7. Generator fixes evaluator findings or records a blocker.
+5. Critic independently checks the runtime, changed files, report, and oracle status from a separate context or subagent.
+6. Critic checks minimal-change scope, test coverage, and regression impact, then writes `Critic Verdict: approved`, `changes_requested`, `blocked`, or `waived`.
+7. Generator fixes critic findings or records a blocker.
 
 Keep role communication in `agent-handoff.md` or reports. Do not rely on hidden chat history.
 
@@ -129,7 +129,7 @@ The prompt must name:
 - edit boundaries
 - code-summary writeback and continuity-ledger update
 - validation and evidence requirements
-- review/test evidence and minimal-change scope
+- test evidence, independent critic verdict, and minimal-change scope
 - terminal whole-demand regression when the final phase or release gate is assigned
 - stop conditions for credentials, production systems, destructive commands, and out-of-scope edits
 
@@ -140,6 +140,6 @@ Avoid vague prompts like "continue from here." A good prompt lets a new window s
 Harness components are assumptions about what the model cannot do reliably alone. Keep them only when they protect real risk:
 
 - Keep planner when raw prompts under-specify scope.
-- Keep evaluator when completion quality is subjective, UI-heavy, AI/eval-heavy, or hard to verify from code.
+- Keep critic review mandatory for completion claims; increase critic depth when completion quality is subjective, UI-heavy, AI/eval-heavy, release-sensitive, or hard to verify from code.
 - Keep phase decomposition when validation or edit boundaries differ.
 - Simplify when a task has one clear file boundary and deterministic validation.

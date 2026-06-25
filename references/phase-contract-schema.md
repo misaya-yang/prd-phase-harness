@@ -57,7 +57,7 @@ handoff: path to agent-handoff.md
 continuity_ledger: path to continuity-ledger.md
 next_window_prompt: path to next-window-prompt.md
 session_boot: object with read_progress, run_baseline_check, update_progress_before_exit booleans
-agent_roles: array containing planner, generator, evaluator when the harness supports independent review
+agent_roles: array containing planner, generator, critic when the harness supports independent review
 ```
 
 The runtime files are the restart surface for fresh context windows. They should be concrete paths in final harnesses.
@@ -112,7 +112,7 @@ rollback_plan: array
 ```
 
 Commands should be deterministic and scoped. Avoid `run tests` without a concrete command.
-Acceptance gates should include review evidence and minimal-change scope when implementation changes files. Terminal phases or release gates should include whole-demand regression across completed feature-oracle items.
+Acceptance gates should include independent critic evidence and minimal-change scope when implementation changes files. Terminal phases or release gates should include whole-demand regression across completed feature-oracle items.
 
 ## `evidence`
 
@@ -123,7 +123,7 @@ waiver_policy: how skipped gates are documented
 next_phase_handoff: what unlocks or blocks dependent phases
 ```
 
-Required artifacts should include test evidence, review evidence, and minimal-change scope notes for implementation phases.
+Required artifacts should include test evidence, independent critic evidence, and minimal-change scope notes for implementation phases.
 
 ## Risk-Triggered Requirements
 
@@ -133,7 +133,7 @@ Required artifacts should include test evidence, review evidence, and minimal-ch
 | `auth`, `security` | `compliance_gates` covering permissions, session, abuse, secret, and failure behavior. |
 | `payment` | `compliance_gates` covering idempotency, test mode, webhooks, no-real-charge, and audit. |
 | `database`, `schema`, `migration` | `rollback_plan` and migration/idempotency validation. |
-| `ai`, `agent`, `llm`, `eval` | acceptance/eval gates with golden questions, trace capture, tool/source boundaries, privacy behavior, and evaluator handoff. |
+| `ai`, `agent`, `llm`, `eval` | acceptance/eval gates with golden questions, trace capture, tool/source boundaries, privacy behavior, and critic handoff. |
 | `external-service` | external input and approval gates plus mock/offline fallback. |
 | `release` | build/smoke/deploy/rollback/monitoring evidence. |
 

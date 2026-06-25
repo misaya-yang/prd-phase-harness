@@ -28,6 +28,12 @@ Find acceptance gates:
 rg -n "ACCEPTANCE_GATES:" {{DOCS_PATH}}
 ```
 
+Validate a completion claim:
+
+```bash
+python3 <skill-dir>/scripts/validate_harness_prd.py {{DOCS_PATH}} --strict --completion-gate --phase <PHASE_ID> --quality-score
+```
+
 ## Phase Index
 
 | PHASE_ID | File | Depends On | Goal Target | Main Validation | Evidence Output |
@@ -66,7 +72,7 @@ rg -n "ACCEPTANCE_GATES:" {{DOCS_PATH}}
 | Loop State | `{{LOOP_STATE_PATH}}` | Keep active phase, feature, iteration, status, and next action current. |
 | Feature Oracle | `{{FEATURE_ORACLE_PATH}}` | Update only status, evidence, and notes for the feature being worked. |
 | Progress Log | `{{PROGRESS_LOG_PATH}}` | Append session start/end, validation, and blocker notes. |
-| Agent Handoff | `{{AGENT_HANDOFF_PATH}}` | Keep planner, generator, and evaluator notes file-based and brief. |
+| Agent Handoff | `{{AGENT_HANDOFF_PATH}}` | Keep planner, generator, and critic notes file-based and brief. |
 | Continuity Ledger | `{{CONTINUITY_LEDGER_PATH}}` | Preserve phase relatedness, code-summary writeback, and interface boundary decisions. |
 | Next Window Prompt | `{{NEXT_WINDOW_PROMPT_PATH}}` | Use this to restart work in a fresh context window. |
 
@@ -74,17 +80,18 @@ rg -n "ACCEPTANCE_GATES:" {{DOCS_PATH}}
 
 - Planner role: expand intent into phase contracts and feature-oracle cases without over-specifying implementation details.
 - Generator role: execute one phase/feature item, update evidence, and hand off to evaluation.
-- Evaluator role: review from files and runtime checks, reject superficial completion, and write actionable findings.
-- For small low-risk phases, one agent may play generator and evaluator only after running objective validation commands.
+- Critic role: run in an independent subagent or fresh context, review actor output from files and runtime checks, reject superficial completion, and write actionable findings.
+- No phase or PRD completion claim is valid until independent critic evidence is recorded.
 
 ## Delivery Quality Gates
 
 - Each phase is independently executable and verifiable.
 - Each phase records inherited evidence, dependency status, and what it unlocks next.
 - Each phase uses the smallest requirement-satisfying change; scope expansion must be justified in the report.
-- Each phase records test evidence and review evidence, or a blocker.
+- Each phase records test evidence and independent critic evidence, or a blocker.
 - The terminal phase or release gate runs whole-demand regression across completed feature-oracle items.
 - Runtime files must be sufficient for a fresh agent to resume after context compaction.
+- `--strict` is structure readiness only; phase and full-demand completion require `--completion-gate`.
 
 ## Goal Setup Templates
 

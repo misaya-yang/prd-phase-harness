@@ -22,7 +22,7 @@ The JSON block below is the authoritative machine-readable contract for goal-mod
 
 - PHASE_ID: {{PHASE_ID}}
 - GOAL_TARGET: {{GOAL_TARGET}}
-- GOAL_PROMPT: Complete {{PHASE_ID}} {{PHASE_NAME}} for `{{REPO_PATH}}` by following `{{PHASE_FILE}}`; {{GOAL_PROMPT_CONSTRAINTS}}; stay inside the named edit boundaries; make the smallest requirement-satisfying change; finish only after validation, regression, review, compliance, rollback, evidence, and acceptance gates pass or blockers are documented.
+- GOAL_PROMPT: Complete {{PHASE_ID}} {{PHASE_NAME}} for `{{REPO_PATH}}` by following `{{PHASE_FILE}}`; {{GOAL_PROMPT_CONSTRAINTS}}; stay inside the named edit boundaries; make the smallest requirement-satisfying change; finish only after validation, regression, review, compliance, rollback, evidence, acceptance gates, and `--completion-gate --phase {{PHASE_ID}}` pass or blockers are documented.
 - DEPENDS_ON: {{DEPENDS_ON}}
 - READ_FIRST: `{{DOCS_PATH}}/README.md`, `{{DOCS_PATH}}/phase-manifest.md`, this file
 - PRIMARY_CONTEXT: {{PRIMARY_CONTEXT}}
@@ -55,8 +55,10 @@ Session boot:
 3. Run the target phase's baseline or smoke validation before implementation when available.
 4. Select one matching feature-oracle item and keep work scoped to that item and this phase.
 5. Summarize inspected code facts and interface decisions back into the source packet and continuity ledger.
-6. Record minimal-change scope and review/test evidence.
+6. Record minimal-change scope and test evidence.
 7. Update loop state, progress, continuity, and handoff files before exiting.
+8. Hand off to an independent critic/subagent for completion review.
+9. Run `--strict --completion-gate --phase {{PHASE_ID}}` before claiming this phase is passed or unlocked.
 
 ## Feature Oracle Policy
 
@@ -65,7 +67,7 @@ The feature oracle is the durable test list for long-running agents. Do not dele
 Status rules:
 
 - `failing`: not implemented or not verified.
-- `passing`: end-to-end evidence exists.
+- `passing`: end-to-end actor evidence exists, cites a phase report with `Status: passed`, and cites an independent critic artifact with `Critic Verdict: approved`.
 - `blocked`: a named dependency, credential, environment, or scope issue prevents completion.
 - `waived`: the user explicitly waived the case and remaining risk is documented.
 
@@ -90,7 +92,7 @@ Before claiming completion, inspect the code paths allowed by this phase and wri
 - `source-packet.md`: summarize discovered files, services, routes, schemas, tests, commands, and runtime constraints.
 - `continuity-ledger.md`: record interface boundaries, dependency assumptions, changed contracts, and any downstream phase impact.
 - `agent-handoff.md`: state the next concrete action, active feature-oracle item, validation evidence, and blocker status.
-- Phase report: link validation output, review evidence, minimal-change scope notes, and the exact code-summary update.
+- Phase report: link validation output, independent critic evidence, minimal-change scope notes, the exact code-summary update, and completion-gate result.
 
 ## Problem Boundary
 

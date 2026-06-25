@@ -62,8 +62,21 @@ Run required checks in this order when applicable:
 6. Review of changed files, minimal-change scope, and requirement coverage.
 7. Full build or release checks.
 8. Terminal whole-demand regression when this is the final phase or release gate.
+9. Completion gate before claiming the phase, release gate, or full demand is done.
 
 If a required check cannot run, collect the non-blocked evidence and mark the check blocked in the report. Do not silently convert blocked into passed.
+
+`--strict` only proves the harness structure and phase contracts are executable. Before marking a phase report `passed`, run:
+
+```bash
+python3 <skill-dir>/scripts/validate_harness_prd.py <harness-folder> --strict --completion-gate --phase <PHASE_ID> --quality-score
+```
+
+Before saying the full user goal is complete, run:
+
+```bash
+python3 <skill-dir>/scripts/validate_harness_prd.py <harness-folder> --strict --completion-gate --quality-score
+```
 
 ## Evidence Report
 
@@ -76,7 +89,7 @@ The report must include:
 - Files changed.
 - Validation evidence table.
 - Minimal-change scope note.
-- Review evidence or evaluator findings.
+- Independent critic evidence or critic findings.
 - Browser screenshots/logs/eval traces where applicable.
 - Blockers and deviations.
 - Handoff notes for the next phase.
@@ -101,7 +114,7 @@ A dependent phase may proceed only when:
 
 Never infer unlock from "most tests passed."
 
-The full requirement may be considered complete only when the terminal phase or release gate records whole-demand regression over completed feature-oracle items, or records an explicit blocker or waiver.
+The full requirement may be considered complete only when the terminal phase or release gate records whole-demand regression over completed feature-oracle items, all selected oracle evidence points to passed or waived reports, and `--completion-gate` passes. Otherwise record an explicit blocker or waiver.
 
 ## Stop Conditions
 

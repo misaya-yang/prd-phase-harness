@@ -93,6 +93,9 @@ class SecondAgentQualityTests(unittest.TestCase):
             "Work on exactly one phase and one feature-oracle item.",
             "Summarize code facts back into the source packet and continuity ledger",
             "Update the phase report, progress log, handoff file, continuity ledger, and oracle evidence",
+            "independent critic/subagent",
+            "Treat `--strict` as structure readiness only",
+            "--completion-gate --phase CR-00",
         ]
         for snippet in required_snippets:
             self.assertIn(snippet, prompt)
@@ -126,6 +129,7 @@ class SecondAgentQualityTests(unittest.TestCase):
 
         state = json.loads(read(output / "loop-state.json"))
         handoff = read(output / "agent-handoff.md")
+        critic_template = read(output / "reports" / "critic-verdict-template.md")
         progress = read(output / "progress-log.md")
         oracle = json.loads(read(output / "feature-oracle.json"))
         first_feature = oracle["features"][0]
@@ -182,15 +186,22 @@ class SecondAgentQualityTests(unittest.TestCase):
         manifest = read(output / "phase-manifest.md")
         handoff = read(output / "agent-handoff.md")
         source_packet = read(output / "source-packet.md")
+        critic_template = read(output / "reports" / "critic-verdict-template.md")
         first_phase = read(output / "phase-00-baseline-audit.md")
         final_phase = read(output / "phase-02-operator-review-ui.md")
 
         for text in [readme, manifest, handoff, source_packet, final_phase]:
             self.assertIn("whole-demand regression", text)
-            self.assertRegex(text, r"review evidence|Review evidence")
+            self.assertIn("critic", text.lower())
 
         self.assertNotIn("whole-demand regression", first_phase)
         self.assertIn("context compaction", readme)
+        self.assertIn("`--strict` is structure readiness, not completion proof", readme)
+        self.assertIn("--completion-gate", manifest)
+        self.assertIn("blocked/partial report", handoff)
+        self.assertIn("Critic Verdict", critic_template)
+        self.assertIn("Actor Report Reviewed", critic_template)
+        self.assertIn("independent", critic_template)
         self.assertIn("smallest requirement-satisfying change", readme)
         self.assertIn("Requirements and Gate Map", source_packet)
         self.assertIn("Delivery Quality Gates", manifest)
@@ -203,10 +214,10 @@ class SecondAgentQualityTests(unittest.TestCase):
         regression = " ".join(contract["validation"]["regression_scope"])
         artifacts = " ".join(contract["evidence"]["required_artifacts"])
         self.assertIn("whole-demand regression", acceptance)
-        self.assertIn("review checks requirement coverage", acceptance)
+        self.assertIn("critic", acceptance)
         self.assertIn("context compaction", acceptance)
         self.assertIn("whole-demand regression", regression)
-        self.assertIn("review evidence", artifacts)
+        self.assertIn("critic evidence", artifacts)
         self.assertIn("minimal-change scope note", artifacts)
 
 

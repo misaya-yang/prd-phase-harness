@@ -27,5 +27,7 @@ Execution rule:
 - Run the required validation and runtime checks.
 - Summarize code facts back into the source packet and continuity ledger before handoff.
 - Update the phase report, progress log, handoff file, continuity ledger, and oracle evidence before claiming completion.
+- Request an independent critic/subagent or fresh-context reviewer to write a separate critic artifact; actor self-review is not completion evidence.
+- Treat `--strict` as structure readiness only; run `--strict --completion-gate --phase {{FIRST_PHASE_ID}}` before claiming this phase is complete.
 - Stop and document blockers instead of guessing when credentials, production systems, destructive commands, or out-of-scope edits are required.
 ```

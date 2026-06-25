@@ -24,7 +24,7 @@
 
 - Every detailed requirement must map to at least one `feature-oracle.json` item.
 - Every phase must name the validation, regression, review, compliance, rollback, and acceptance gates that prove its requirement slice.
-- Every implementation phase must record test evidence and review evidence, or an explicit blocker.
+- Every implementation phase must record test evidence and independent critic evidence, or an explicit blocker.
 - Terminal completion requires whole-demand regression across completed feature-oracle items.
 - If a requirement cannot be mapped to a phase and gate, record the blocker before implementation.
 

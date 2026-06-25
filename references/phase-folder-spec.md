@@ -182,7 +182,7 @@ Every phase file should be assignable as one standalone goal. Use this section o
       "run_baseline_check": true,
       "update_progress_before_exit": true
     },
-    "agent_roles": ["planner", "generator", "evaluator"]
+    "agent_roles": ["planner", "generator", "critic"]
   },
   "context": {
     "read_first": [],
@@ -339,13 +339,13 @@ If a command cannot run locally, the phase must require a blocker note explainin
 
 ## Minimal Change and Review Rules
 
-Every phase should name the smallest expected edit boundary and require review evidence before `passed`.
+Every phase should name the smallest expected edit boundary and require independent critic evidence before `passed`.
 
 The phase report should record:
 
 - Files changed and why those files were the smallest sufficient change.
 - Any scope expansion and the reason it was required.
-- Self-review or evaluator findings tied to requirements, tests, and regression impact.
+- Independent critic findings tied to requirements, tests, and regression impact.
 
 ## Terminal Regression Rules
 
