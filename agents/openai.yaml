@@ -1,4 +1,4 @@
 interface:
   display_name: "PRD Phase Harness"
   short_description: "Build loop-driven agent phase harnesses"
-  default_prompt: "Use $prd-phase-harness to convert this PRD, Figma design, rough feature request, or existing roadmap into an executable long-running agent harness with source packet, loop contract, loop state, feature oracle, continuity ledger, progress log, planner/generator/evaluator handoff, next-window prompt, manifest, machine contracts, validation gates, regression scope, phase reports, and unlock rules."
+  default_prompt: "Use $prd-phase-harness to convert this PRD, Figma design, rough feature request, or existing roadmap into an executable long-running agent harness with source packet, context profile, loop contract, loop state, feature oracle, continuity ledger, progress log, planner/generator/critic handoff, critic verdict template, next-window prompt, manifest, machine contracts, validation gates, completion gates, regression scope, phase reports, and unlock rules."

@@ -5,6 +5,7 @@ Agent-executable PRD phase harness skill for Codex, Claude Code, and other goal-
 This repository packages a portable skill that converts PRDs, Figma designs, rough feature requests, or existing roadmap docs into a cold-start execution folder:
 
 - `source-packet.md` for request facts, trust boundaries, assumptions, risks, and approvals
+- `context-profile.json` for progressive-disclosure hot paths, deferred triggers, role load profiles, and context caps
 - `loop-contract.json` and `loop-state.json` for the observe/select/execute/verify/record/decide control loop
 - `feature-oracle.json` for end-to-end feature/test cases that stay visible across sessions
 - `continuity-ledger.md` for phase relatedness, code-summary writeback, and interface boundary decisions
@@ -12,7 +13,7 @@ This repository packages a portable skill that converts PRDs, Figma designs, rou
 - `README.md` for folder-level operating protocol
 - `phase-manifest.md` for dependency flow, validation matrix, risk matrix, reports, and goal prompts
 - `phase-XX-*.md` files with machine-readable JSON contracts and grep-friendly coding-agent contracts
-- `reports/` for phase evidence, blockers, screenshots, eval tables, and handoff notes
+- `reports/` for actor phase reports, independent critic verdicts, blockers, screenshots, eval tables, and handoff notes
 
 ## Why This Exists
 
@@ -21,7 +22,7 @@ Long-running coding agents do not fail only because the model is weak. They fail
 A normal PRD says what the product should become. A Goal Harness says how a fresh agent should continue the work safely.
 
 ```text
-intent -> source packet -> loop contract -> loop state -> feature oracle -> continuity ledger -> phase map -> machine contract -> runtime handoff -> execution report -> dependency unlock
+intent -> context profile -> source packet -> loop contract -> loop state -> feature oracle -> continuity ledger -> phase map -> machine contract -> actor report -> independent critic verdict -> dependency unlock
 ```
 
 ## Install
@@ -39,7 +40,7 @@ For Claude Code or other Agent Skills-compatible workflows, keep `SKILL.md`, `re
 ## Use
 
 ```text
-Use $prd-phase-harness to convert this PRD, Figma design, rough feature request, or existing roadmap into an executable long-running agent harness with source packet, loop contract, loop state, feature oracle, continuity ledger, progress log, planner/generator/evaluator handoff, next-window prompt, manifest, machine contracts, phase reports, validation gates, regression scope, and unlock rules.
+Use $prd-phase-harness to convert this PRD, Figma design, rough feature request, or existing roadmap into an executable long-running agent harness with source packet, context profile, loop contract, loop state, feature oracle, continuity ledger, progress log, planner/generator/critic handoff, critic verdict template, next-window prompt, manifest, machine contracts, phase reports, validation gates, completion gates, regression scope, and unlock rules.
 ```
 
 ## Scaffold
@@ -66,7 +67,14 @@ python3 scripts/validate_harness_prd.py docs/new_feature_harness --allow-placeho
 python3 scripts/validate_harness_prd.py docs/new_feature_harness --strict --quality-score
 ```
 
-The validator checks structure, JSON machine contracts, runtime artifacts, loop cycle/state, feature-oracle evidence, continuity files, phase IDs, dependency order, report paths, command objects, risk-triggered gates, placeholders, and vague language.
+After actor and independent critic evidence exists, use completion gates before declaring a phase or full demand complete:
+
+```bash
+python3 scripts/validate_harness_prd.py docs/new_feature_harness --strict --completion-gate --phase NF-02 --quality-score
+python3 scripts/validate_harness_prd.py docs/new_feature_harness --strict --completion-gate --quality-score
+```
+
+The validator checks structure, JSON machine contracts, runtime artifacts, loop cycle/state, feature-oracle evidence, continuity files, phase IDs, dependency order, report paths, critic artifacts, command objects, risk-triggered gates, placeholders, and vague language. `--strict` proves the harness is executable; `--completion-gate` is required before calling one phase or the full demand complete.
 
 ## Repository Layout
 
@@ -79,6 +87,7 @@ The validator checks structure, JSON machine contracts, runtime artifacts, loop 
 │   ├── README.template.md
 │   ├── agent-handoff.template.md
 │   ├── continuity-ledger.template.md
+│   ├── critic-verdict.template.md
 │   ├── next-window-prompt.template.md
 │   ├── phase-manifest.template.md
 │   ├── phase-report.template.md
@@ -107,7 +116,8 @@ Every phase should be a cold-start executable unit with:
 - loop contract and loop state
 - feature oracle and progress log
 - continuity ledger for cross-phase relatedness and code-summary writeback
-- planner/generator/evaluator handoff
+- planner/generator/critic handoff
+- independent critic verdict artifact
 - copy-ready next-window prompt
 - `GOAL_PROMPT`
 - `READ_FIRST`

@@ -100,9 +100,9 @@ Use this loop when work is complex enough to justify more than one role:
 
 1. Planner writes the source packet, feature oracle, phase map, and target phase contract.
 2. Generator proposes a phase contract or plan before editing.
-3. Evaluator reviews the proposed contract before implementation when the source is ambiguous or the risk is high.
-4. Generator implements one target item and writes evidence.
-5. Critic independently checks the runtime, changed files, report, and oracle status from a separate context or subagent.
+3. Critic may review the proposed contract before implementation when the source is ambiguous or the risk is high.
+4. Generator implements one target item and writes actor evidence.
+5. Critic independently checks the runtime, changed files, actor report, and oracle status from a separate context or subagent.
 6. Critic checks minimal-change scope, test coverage, and regression impact, then writes `Critic Verdict: approved`, `changes_requested`, `blocked`, or `waived`.
 7. Generator fixes critic findings or records a blocker.
 

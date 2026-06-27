@@ -1,6 +1,6 @@
 ---
 name: prd-phase-harness
-description: Use when creating, reviewing, repairing, or executing long-running coding-agent PRD phase harnesses. Builds standalone source packets, ordered phase contracts, feature oracles, continuity artifacts, validation/review/test gates, and handoff prompts for Codex or Claude Code work that must survive compaction and fresh-window continuation.
+description: Use when creating, reviewing, repairing, or executing long-running coding-agent PRD phase harnesses for Codex, Claude Code, subagents, or Agent Skills-compatible workflows. Builds standalone source packets, context profiles, loop contracts, loop state, ordered phase contracts, feature oracles, continuity ledgers, progress logs, independent critic artifacts, completion-gate validation, and handoff prompts for work that must survive compaction and fresh-window continuation.
 ---
 
 # PRD Phase Harness
@@ -12,7 +12,7 @@ Turn product intent into a cold-start executable harness for coding agents. The 
 Core invariant:
 
 ```text
-intent -> context profile -> source packet -> loop contract -> loop state -> feature oracle -> continuity ledger -> phase map -> machine contract -> runtime handoff -> execution report -> dependency unlock
+intent -> context profile -> source packet -> loop contract -> loop state -> feature oracle -> continuity ledger -> phase map -> machine contract -> actor report -> independent critic verdict -> dependency unlock
 ```
 
 Mission: make top-tier coding agents stable across long-running delivery, context compaction, and fresh-window handoffs by turning requirements into ordered, independently verifiable phases with explicit gates, review, tests, minimal-change boundaries, and final whole-demand regression.
