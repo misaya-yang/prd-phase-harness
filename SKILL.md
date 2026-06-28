@@ -64,32 +64,18 @@ For full detail, load `references/builder-protocol.md`.
 
 ## Phase Contract
 
-Each phase must have both:
+Each phase has **one** authoritative `Machine Contract` JSON block plus a short grep header. There is no duplicate Markdown contract: the JSON is the single source for status, dependencies, context budget, paths, tools, risk tags, validation, gates, evidence, and stop conditions. Shared session-boot, loop-cycle, feature-oracle, and writeback rules live once in the README/manifest, not in every phase.
 
-- A `Machine Contract` JSON block for validators and future automation.
-- A `Coding Agent Contract` Markdown list for grep-friendly agent reading.
+Required grep header (four lines above the JSON, for quick `rg` discovery):
 
-The JSON block is authoritative for status, dependencies, paths, tools, risk tags, gates, evidence, and stop conditions. The Markdown anchors remain for quick `rg` discovery.
+- `PHASE_ID` (must match `phase.id` in the JSON)
+- `DEPENDS_ON`, `UNLOCKS`, `FEATURE`
 
-Required Markdown anchors:
+Required Markdown sections (only what the JSON cannot carry):
 
-- `PHASE_ID`
-- `GOAL_TARGET`
-- `GOAL_PROMPT`
-- `DEPENDS_ON`
-- `READ_FIRST`
-- `PRIMARY_CONTEXT`
-- `LIKELY_EDIT_PATHS`
-- `DO_NOT_EDIT`
-- `EXECUTION_MODE`
-- `VALIDATION_COMMANDS`
-- `BROWSER_CHECKS`
-- `REGRESSION_SCOPE`
-- `COMPLIANCE_GATES`
-- `ROLLBACK_PLAN`
-- `ACCEPTANCE_GATES`
-- `EVIDENCE_OUTPUT`
-- `STOP_CONDITIONS`
+- `## Machine Contract` — the authoritative JSON block
+- `## Requirements` — observable behavior with stable R-IDs
+- `## Critic Protocol` — what an independent critic must reject
 
 For the JSON schema, load `references/phase-contract-schema.md`.
 
@@ -166,16 +152,28 @@ Use `--completion-gate` before saying a phase, release gate, or full user goal i
 - `references/research-notes.md`: rationale and source synthesis.
 - `assets/*.template.md`: output templates used by the scaffold.
 - `scripts/scaffold_harness_prd.py`: deterministic starter folder generator.
-- `scripts/validate_harness_prd.py`: structural and semantic validator.
+- `scripts/validate_harness_prd.py`: structural and semantic validator for generated harnesses.
+- `scripts/quick_validate.py`: self-check for this skill (frontmatter, referenced files, compile, scaffold smoke).
 
 ## Final Quality Gate
 
-Before claiming the harness is ready:
+Two separate gates apply; do not conflate them.
 
-- No referenced skill file is missing.
-- `quick_validate.py` passes for the skill.
-- `python3 -m py_compile scripts/*.py` passes.
-- Scaffold smoke test passes validator with `--allow-placeholders`.
+### Skill self-check (you edited this skill)
+
+Run the skill's own integrity check, then its tests:
+
+```bash
+python3 <skill-dir>/scripts/quick_validate.py
+python3 -m unittest discover <skill-dir>/tests
+```
+
+`quick_validate.py` confirms `SKILL.md` frontmatter is valid, every referenced `references/`, `scripts/`, and `assets/` file exists (no dangling pointers), `scripts/*.py` compile, and the scaffold still emits every runtime file and passes `--allow-placeholders`. Both commands must be green before publishing skill changes.
+
+### Generated-harness gate (you produced a harness)
+
+`validate_harness_prd.py` enforces most of the following; the rest is builder judgment:
+
 - A filled harness passes validator with `--strict`.
 - Any claimed phase completion passes `--strict --completion-gate --phase <PHASE_ID>`.
 - Any claimed full-demand, release, or goal completion passes `--strict --completion-gate`.

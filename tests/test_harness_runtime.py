@@ -220,15 +220,14 @@ def write_minimal_harness(
 
     phase_text = f"""# Phase 00 - Baseline Audit
 
-> For agentic workers: enter plan-first mode before editing.
+> Agentic worker: open context-profile.json, loop-state.json, and this file only.
+
+- PHASE_ID: RT-00
+- DEPENDS_ON: none
+- UNLOCKS: none
+- FEATURE: RT-F001
 
 **Goal:** Establish current system evidence before implementation.
-
-**Architecture:** This phase records repo state and runtime evidence for later work.
-
-**Tech Stack:** Python scripts, Markdown harness docs, JSON contracts.
-
----
 
 ## Machine Contract
 
@@ -236,81 +235,15 @@ def write_minimal_harness(
 {json.dumps(contract, indent=2)}
 ```
 
-## Coding Agent Contract
-
-- PHASE_ID: RT-00
-- GOAL_TARGET: Establish current system evidence before implementation.
-- GOAL_PROMPT: Complete RT-00 Baseline Audit for `.` by following `{docs_path}/phase-00-baseline-audit.md`; stay inside audit-only boundaries; finish only after validation, regression, review, compliance, rollback, evidence, and acceptance gates pass or blockers are documented.
-- DEPENDS_ON: none
-- READ_FIRST: `{docs_path}/context-profile.json`, `{docs_path}/loop-state.json`, this file
-- PRIMARY_CONTEXT: README.md, scripts
-- LIKELY_EDIT_PATHS: docs/runtime-harness
-- DO_NOT_EDIT: production systems
-- EXECUTION_MODE: plan-first; implement stepwise; verify before completion; write evidence before handoff
-- VALIDATION_COMMANDS: python3 -m unittest discover tests
-- BROWSER_CHECKS: none for baseline
-- REGRESSION_SCOPE: existing validator behavior remains stable; terminal whole-demand regression covers completed feature-oracle items
-- COMPLIANCE_GATES: no secrets are read or written
-- ROLLBACK_PLAN: revert docs-only changes
-- ACCEPTANCE_GATES: source packet and runtime files are present; independent critic evidence confirms requirement coverage; minimal-change scope note is recorded; whole-demand regression is recorded for terminal completion
-- EVIDENCE_OUTPUT: `{docs_path}/reports/rt-00-baseline-audit-report.md`
-- STOP_CONDITIONS: credentials are required
-
-## Task Spec
-
-Record baseline evidence for the harness.
-
-## Problem Boundary
-
-In scope:
-
-- Inspect local harness files.
-
-Out of scope:
-
-- Deployments and production data.
-
-## Context Policy
-
-Before editing, inspect:
-
-- README.md
-- scripts
-
 ## Requirements
 
 ### R1 Baseline Evidence
 
 Write evidence that future agents can load without hidden chat context.
 
-## Test and Regression Requirements
-
-Run `python3 -m unittest discover tests` and record independent critic evidence, minimal-change scope, and terminal whole-demand regression.
-
-## Compliance and Safety Requirements
-
-Do not read secrets or mutate production data.
-
-## Rollback and Recovery
-
-Revert docs-only changes.
-
-## Execution Capture
-
-Write the phase report and progress-log update.
-
 ## Critic Protocol
 
-Reject completion without report evidence and runtime files.
-
-## Acceptance Criteria
-
-- Runtime files exist.
-- Report path is documented.
-
-## Risks
-
-- Missing runtime files could strand the next agent.
+Reject completion without report evidence, runtime files, independent critic evidence, and minimal-change scope notes.
 """
 
     readme = """# Runtime Harness

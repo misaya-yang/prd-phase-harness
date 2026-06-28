@@ -130,20 +130,21 @@ The validation matrix must include:
 
 ## Phase File Contract
 
-Every phase file should be assignable as one standalone goal. Use this section order:
+Every phase file is one standalone goal: a short grep header, one authoritative JSON contract, and only the two narrative sections the JSON cannot carry. Shared session-boot, loop-cycle, feature-oracle, and writeback rules are stated once in the README/manifest, never repeated per phase.
+
+Use this structure:
 
 ```markdown
 # Phase XX - <Name>
 
-> For agentic workers: enter plan-first mode before editing...
+> Agentic worker: open context-profile.json, loop-state.json, and this file only. Execute this phase, make the smallest change, write evidence, stop at the gates.
+
+- PHASE_ID: <PREFIX-XX>
+- DEPENDS_ON: <none or IDs>
+- UNLOCKS: <next ID or none>
+- FEATURE: <feature-oracle id this phase owns>
 
 **Goal:** <one clear outcome>
-
-**Architecture:** <how the phase fits the existing system>
-
-**Tech Stack:** <specific frameworks, files, services, tools>
-
----
 
 ## Machine Contract
 
@@ -230,52 +231,18 @@ Every phase file should be assignable as one standalone goal. Use this section o
 }
 ```
 
-## Coding Agent Contract
-
-- PHASE_ID: <PREFIX-XX>
-- GOAL_TARGET: <single sentence target>
-- GOAL_PROMPT: Complete <PREFIX-XX> <Name> for `<repo>` by following `docs/<topic>/phase-XX-<slug>.md`; <constraints>; stay inside the named edit boundaries; finish only after validation, regression, compliance, rollback, evidence, and acceptance gates pass or blockers are documented.
-- DEPENDS_ON: <none or IDs>
-- READ_FIRST: `docs/<topic>/context-profile.json`, `docs/<topic>/loop-state.json`, this file
-- PRIMARY_CONTEXT: <files, routes, schemas, APIs, design artifacts>
-- LIKELY_EDIT_PATHS: <bounded paths>
-- DO_NOT_EDIT: <protected files, non-goals, external systems>
-- EXECUTION_MODE: plan-first; implement stepwise; verify before completion; write evidence before handoff
-- VALIDATION_COMMANDS: <commands>
-- BROWSER_CHECKS: <routes and viewports, or none>
-- REGRESSION_SCOPE: <existing behavior that must still work>
-- COMPLIANCE_GATES: <privacy, security, a11y, permissions, data retention, brand, content boundaries>
-- ROLLBACK_PLAN: <migration reversal, feature flag, revert path, or none>
-- ACCEPTANCE_GATES: <deterministic gates>
-- EVIDENCE_OUTPUT: `docs/<topic>/reports/<phase-id>-<slug>-report.md`
-- STOP_CONDITIONS: <when to stop and document instead of guessing>
-
-## Task Spec
-
-## Problem Boundary
-
-## Context Policy
-
 ## Requirements
 
 ### R1 <Requirement Name>
 
-## Test and Regression Requirements
-
-## Compliance and Safety Requirements
-
-## Rollback and Recovery
-
-## Execution Capture
+<observable behavior; stable R-IDs>
 
 ## Critic Protocol
 
-## Acceptance Criteria
-
-## Risks
+<what an independent critic must reject before this phase can pass>
 ```
 
-The JSON contract is authoritative. The Markdown contract mirrors the most important fields for grep and human scanning.
+The `## Machine Contract` JSON is the single authoritative source for the goal prompt, runtime paths, context budget, edit boundaries, validation, evidence, risk, and stop conditions. The four-line grep header exists only for fast `rg` discovery; `PHASE_ID` must match `phase.id` in the JSON. For the field-by-field schema, load `phase-contract-schema.md`.
 
 ## Status Model
 
@@ -395,7 +362,7 @@ Before finalizing a folder:
 - README explains how an agent should load the folder.
 - Manifest indexes every phase, dependency, report, risk, and validation class.
 - Dependencies are acyclic.
-- Every phase has the full `Coding Agent Contract`.
+- Every phase has the grep header, one authoritative `## Machine Contract` JSON, `## Requirements`, and `## Critic Protocol`.
 - Every phase has concrete context, edit paths, protected paths, validation, regression, compliance, rollback, acceptance, evidence, and stop conditions.
 - Baseline/audit exists or is explicitly waived.
 - Non-goals prevent scope creep.

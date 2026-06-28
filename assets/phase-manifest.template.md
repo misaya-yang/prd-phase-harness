@@ -4,28 +4,16 @@ This is the compact index for coding agents. Prefer this file plus the target ph
 
 ## Grep Usage
 
-Find a phase:
+Find a phase by id (grep header):
 
 ```bash
 rg -n "PHASE_ID: {{PREFIX}}-XX" {{DOCS_PATH}}
 ```
 
-Find all goal prompts:
+Everything else (goal prompt, validation commands, gates, evidence) lives in each phase's single `## Machine Contract` JSON block. Read that block, or grep its keys:
 
 ```bash
-rg -n "GOAL_PROMPT:" {{DOCS_PATH}}
-```
-
-Find validation commands:
-
-```bash
-rg -n "VALIDATION_COMMANDS:" {{DOCS_PATH}}
-```
-
-Find acceptance gates:
-
-```bash
-rg -n "ACCEPTANCE_GATES:" {{DOCS_PATH}}
+rg -n '"prompt":|"command":|"acceptance_gates"' {{DOCS_PATH}}
 ```
 
 Validate a completion claim:
@@ -97,7 +85,7 @@ python3 <skill-dir>/scripts/validate_harness_prd.py {{DOCS_PATH}} --strict --com
 
 ## Goal Setup Templates
 
-Use the exact phase file `GOAL_PROMPT` when creating an agent goal. If a phase has dependencies, do not execute it until dependency acceptance gates are met or explicitly waived in the previous phase report.
+Use the `goal.prompt` string from the phase's `## Machine Contract` JSON when creating an agent goal. If a phase has dependencies, do not execute it until dependency acceptance gates are met or explicitly waived in the previous phase report.
 
 Example:
 

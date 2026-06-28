@@ -11,40 +11,14 @@ from pathlib import Path
 from typing import Any
 
 
-REQUIRED_CONTRACT_KEYS = [
-    "PHASE_ID",
-    "GOAL_TARGET",
-    "GOAL_PROMPT",
-    "DEPENDS_ON",
-    "READ_FIRST",
-    "PRIMARY_CONTEXT",
-    "LIKELY_EDIT_PATHS",
-    "DO_NOT_EDIT",
-    "EXECUTION_MODE",
-    "VALIDATION_COMMANDS",
-    "BROWSER_CHECKS",
-    "REGRESSION_SCOPE",
-    "COMPLIANCE_GATES",
-    "ROLLBACK_PLAN",
-    "ACCEPTANCE_GATES",
-    "EVIDENCE_OUTPUT",
-    "STOP_CONDITIONS",
-]
+# The phase contract is a single authoritative JSON block. The Markdown body only
+# needs a short grep header plus the two narrative sections the JSON cannot carry.
+REQUIRED_HEADER_KEYS = ["PHASE_ID"]
 
 REQUIRED_PHASE_SECTIONS = [
     "## Machine Contract",
-    "## Coding Agent Contract",
-    "## Task Spec",
-    "## Problem Boundary",
-    "## Context Policy",
     "## Requirements",
-    "## Test and Regression Requirements",
-    "## Compliance and Safety Requirements",
-    "## Rollback and Recovery",
-    "## Execution Capture",
     "## Critic Protocol",
-    "## Acceptance Criteria",
-    "## Risks",
 ]
 
 REQUIRED_README_SECTIONS = [
@@ -425,7 +399,7 @@ def validate_json_contract(
     path: Path,
     text: str,
     data: dict[str, Any] | None,
-    markdown_values: dict[str, str],
+    header_phase_id: str | None,
     allow_placeholders: bool,
     strict: bool,
 ) -> tuple[list[str], list[str], dict[str, Any]]:
@@ -449,9 +423,8 @@ def validate_json_contract(
     runtime = data.get("runtime", {}) if isinstance(data.get("runtime"), dict) else {}
 
     json_phase_id = phase.get("id")
-    md_phase_id = markdown_values.get("PHASE_ID")
-    if json_phase_id and md_phase_id and json_phase_id != md_phase_id:
-        errors.append(f"{path.name} PHASE_ID mismatch: JSON {json_phase_id} vs Markdown {md_phase_id}")
+    if json_phase_id and header_phase_id and json_phase_id != header_phase_id:
+        errors.append(f"{path.name} PHASE_ID mismatch: JSON {json_phase_id} vs header {header_phase_id}")
 
     phase_file = phase.get("phase_file", "")
     if path.name not in str(phase_file):
@@ -1280,15 +1253,16 @@ def validate_folder(
             if not find_heading(text, section):
                 errors.append(f"{path.name} missing section: {section}")
 
-        markdown_values: dict[str, str] = {}
-        for key in REQUIRED_CONTRACT_KEYS:
+        header_phase_id: str | None = None
+        for key in REQUIRED_HEADER_KEYS:
             value = extract_contract_value(text, key)
             if value is None:
-                errors.append(f"{path.name} missing contract key: {key}")
+                errors.append(f"{path.name} missing grep header line: - {key}: <value>")
                 continue
             if value.lower() in {"", "todo", "tbd"}:
-                errors.append(f"{path.name} has empty/placeholder contract key: {key}")
-            markdown_values[key] = value
+                errors.append(f"{path.name} has empty/placeholder header key: {key}")
+            if key == "PHASE_ID":
+                header_phase_id = value
 
         try:
             json_contract = extract_json_contract(text)
@@ -1300,14 +1274,14 @@ def validate_folder(
             path=path,
             text=text,
             data=json_contract,
-            markdown_values=markdown_values,
+            header_phase_id=header_phase_id,
             allow_placeholders=allow_placeholders,
             strict=strict,
         )
         errors.extend(json_errors)
         warnings.extend(json_warnings)
 
-        phase_id = markdown_values.get("PHASE_ID") or get_path(parsed, ("phase", "id"))
+        phase_id = get_path(parsed, ("phase", "id")) or header_phase_id
         if phase_id:
             phase_id = str(phase_id)
             ordered_ids.append(phase_id)
@@ -1321,12 +1295,6 @@ def validate_folder(
 
         json_deps = get_path(parsed, ("phase", "depends_on"))
         dep_ids = [str(item) for item in as_list(json_deps)]
-        if not dep_ids:
-            dep_ids = [
-                item.strip()
-                for item in re.split(r"[, ]+", markdown_values.get("DEPENDS_ON", "none"))
-                if item.strip() and item.strip().lower() != "none"
-            ]
         if phase_id:
             deps[str(phase_id)] = dep_ids
 

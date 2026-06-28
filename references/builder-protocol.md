@@ -88,21 +88,18 @@ The coding agent may update `status` and `evidence`; it should not delete cases 
 
 ## 6. Contract Writing
 
-Every phase must have:
+Every phase has one authoritative Machine Contract JSON block that carries:
 
-- Machine Contract JSON.
-- Runtime artifact paths.
-- Context profile hot path and deferred-load rules.
-- Markdown Coding Agent Contract.
-- Observable requirements.
-- Test/regression gates.
-- Review gates and minimal-change scope notes.
-- Compliance/safety gates.
-- Rollback and recovery notes.
-- Evidence output.
-- Stop conditions.
+- phase id, dependencies, and unlocks
+- goal target and runnable goal prompt
+- runtime artifact paths plus context-profile hot path and deferred-load rules
+- bounded read/edit paths and protected paths
+- validation commands, test/regression gates, compliance/safety gates, rollback/recovery, and acceptance gates (including minimal-change scope and independent critic evidence)
+- evidence outputs and stop conditions
 
-Keep `GOAL_PROMPT` executable: phase ID, phase file, repo path, constraints, gate classes, completion rule.
+Plus a four-line grep header (`PHASE_ID`, `DEPENDS_ON`, `UNLOCKS`, `FEATURE`) and the two narrative sections the JSON cannot carry: `## Requirements` (observable behavior) and `## Critic Protocol`.
+
+Keep the JSON `goal.prompt` executable: phase ID, phase file, repo path, constraints, gate classes, completion rule.
 
 ## 7. Agent Role Design
 

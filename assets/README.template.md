@@ -21,13 +21,13 @@ When assigned a phase goal:
 3. Open the assigned target phase file. If the target is unknown, locate it with:
 
 ```bash
-rg -n "PHASE_ID: <ID>|GOAL_PROMPT|VALIDATION_COMMANDS|ACCEPTANCE_GATES" {{DOCS_PATH}}
+rg -n "PHASE_ID: <ID>" {{DOCS_PATH}}
 ```
 
-4. Open only the target phase file and hot-path items allowed by `context-profile.json`.
+4. Open only the target phase file and hot-path items allowed by `context-profile.json`. The goal prompt, edit boundaries, validation, and gates all live in that phase's single `## Machine Contract` JSON block.
 5. Do not load the full docs folder, full `source-packet.md`, full `feature-oracle.json`, or prior reports unless the context profile trigger says to.
 6. Create a plan before editing.
-7. Treat `LIKELY_EDIT_PATHS` as the intended write boundary.
+7. Treat the contract's `boundaries.likely_edit_paths` as the intended write boundary.
 8. Complete validation, browser/runtime checks, regression scope, review, compliance gates, rollback notes, evidence output, and acceptance gates before claiming completion.
 9. Summarize code facts and boundary decisions back into `source-packet.md` and `continuity-ledger.md` using targeted sections only.
 10. Update `progress-log.md`, `agent-handoff.md`, the phase report, and only the relevant feature `status`/`evidence` fields in `feature-oracle.json`.
@@ -95,7 +95,7 @@ Each fresh session must start from the smallest durable context packet instead o
 
 ## New Window Prompt
 
-Use `{{NEXT_WINDOW_PROMPT_PATH}}` when starting a new Codex, Claude Code, or compatible agent window. Prefer the exact target phase `GOAL_PROMPT` from the phase file when assigning implementation work.
+Use `{{NEXT_WINDOW_PROMPT_PATH}}` when starting a new Codex, Claude Code, or compatible agent window. Prefer the exact `goal.prompt` from the target phase's `## Machine Contract` JSON when assigning implementation work.
 
 ## Shared Harness Rules
 

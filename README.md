@@ -12,7 +12,7 @@ This repository packages a portable skill that converts PRDs, Figma designs, rou
 - `progress-log.md`, `agent-handoff.md`, and `next-window-prompt.md` for fresh-window recovery
 - `README.md` for folder-level operating protocol
 - `phase-manifest.md` for dependency flow, validation matrix, risk matrix, reports, and goal prompts
-- `phase-XX-*.md` files with machine-readable JSON contracts and grep-friendly coding-agent contracts
+- `phase-XX-*.md` files with one authoritative machine-readable JSON contract plus a short grep header
 - `reports/` for actor phase reports, independent critic verdicts, blockers, screenshots, eval tables, and handoff notes
 
 ## Why This Exists
@@ -76,6 +76,17 @@ python3 scripts/validate_harness_prd.py docs/new_feature_harness --strict --comp
 
 The validator checks structure, JSON machine contracts, runtime artifacts, loop cycle/state, feature-oracle evidence, continuity files, phase IDs, dependency order, report paths, critic artifacts, command objects, risk-triggered gates, placeholders, and vague language. `--strict` proves the harness is executable; `--completion-gate` is required before calling one phase or the full demand complete.
 
+## Develop and Verify the Skill
+
+`validate_harness_prd.py` validates a harness you generate. To verify the skill **itself** (after editing `SKILL.md`, references, scripts, or templates), run the self-check and the tests:
+
+```bash
+python3 scripts/quick_validate.py
+python3 -m unittest discover tests
+```
+
+`quick_validate.py` confirms the frontmatter is valid, every file referenced by `SKILL.md` exists (no dangling pointers), scripts compile, and the scaffold still emits every runtime file and passes `--allow-placeholders`. It exits non-zero on failure, so it is CI-friendly.
+
 ## Repository Layout
 
 ```text
@@ -103,34 +114,25 @@ The validator checks structure, JSON machine contracts, runtime artifacts, loop 
 │   ├── phase-runner-protocol.md
 │   ├── research-notes.md
 │   └── security-protocol.md
-└── scripts/
-    ├── scaffold_harness_prd.py
-    └── validate_harness_prd.py
+├── scripts/
+│   ├── scaffold_harness_prd.py
+│   ├── validate_harness_prd.py
+│   └── quick_validate.py
+└── tests/
+    ├── test_harness_runtime.py
+    ├── test_second_agent_quality.py
+    └── test_skill_self_validation.py
 ```
 
 ## Core Idea
 
-Every phase should be a cold-start executable unit with:
+Every phase is a cold-start executable unit built from just three parts:
 
-- Machine Contract JSON
-- loop contract and loop state
-- feature oracle and progress log
-- continuity ledger for cross-phase relatedness and code-summary writeback
-- planner/generator/critic handoff
-- independent critic verdict artifact
-- copy-ready next-window prompt
-- `GOAL_PROMPT`
-- `READ_FIRST`
-- `PRIMARY_CONTEXT`
-- `LIKELY_EDIT_PATHS`
-- `DO_NOT_EDIT`
-- validation commands
-- browser/runtime checks
-- regression scope
-- compliance gates
-- rollback plan
-- evidence output
-- stop conditions
+- a short grep header (`PHASE_ID`, `DEPENDS_ON`, `UNLOCKS`, `FEATURE`)
+- one authoritative Machine Contract JSON block carrying the goal prompt, context budget, read/edit boundaries, validation commands, browser/runtime checks, regression scope, compliance gates, rollback plan, evidence outputs, and stop conditions
+- a `## Requirements` section (observable behavior) and a `## Critic Protocol` section
+
+Shared machinery lives once in the runtime files, not in every phase: loop contract and loop state, feature oracle and progress log, continuity ledger for cross-phase relatedness and code-summary writeback, planner/generator/critic handoff, independent critic verdict artifact, and a copy-ready next-window prompt.
 
 ## License
 

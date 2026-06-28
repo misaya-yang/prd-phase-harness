@@ -137,15 +137,6 @@ def validation_readme_block(command: str) -> str:
     )
 
 
-def validation_requirement_text(command: str) -> str:
-    return (
-        f"Run `{command}` first to discover the project's real validation surface. "
-        "Then record and execute the exact scoped checks required for this phase, or document "
-        "a blocker when the project has no runnable local command. Preserve prior phase "
-        "acceptance evidence and add route/eval checks when the phase touches UI or AI behavior."
-    )
-
-
 def phase_regression_scope(is_terminal: bool) -> list[str]:
     scope = ["prior phase report evidence and feature-oracle status remain valid"]
     if is_terminal:
@@ -784,7 +775,6 @@ def main() -> int:
 
     phase_template = read_template("phase.template.md")
     for index, phase in enumerate(phases):
-        is_terminal = index + 1 == len(phases)
         contract_json = phase_contract(
             phase=phase,
             phases=phases,
@@ -797,95 +787,25 @@ def main() -> int:
         )
         unlocks = phases[index + 1]["id"] if index + 1 < len(phases) else "none"
         current_feature_id = feature_id(args.prefix, index)
-        goal_target = phase_goal(args.title, phase["name"], index)
-        goal_constraints = (
-            f"work on feature-oracle item {current_feature_id}; preserve dependency continuity with "
-            f"{phase['depends_on']}; write code facts and boundary decisions back before handoff"
-        )
-        if phase["depends_on"] == "none":
-            context_policy = (
-                "- Start with `context-profile.json`, `loop-state.json`, and this phase file.\n"
-                "- Inspect the repository to establish baseline code facts before unlocking implementation phases.\n"
-                "- Open `source-packet.md` and `continuity-ledger.md` only for targeted writeback after inspection."
-            )
-            prior_phase_evidence = "no prior phase; establish baseline evidence for dependent phases"
-        else:
-            context_policy = (
-                "- Start with `context-profile.json`, `loop-state.json`, and this phase file.\n"
-                f"- Open only the {phase['depends_on']} report summary or continuity row needed to confirm inherited boundaries.\n"
-                "- Open `source-packet.md` and `continuity-ledger.md` only for targeted lookup or writeback."
-            )
-            prior_phase_evidence = (
-                f"the {phase['depends_on']} phase report, progress-log entry, oracle evidence, and continuity-ledger boundary notes"
-            )
-        regression_scope = "Prior phase report evidence, feature-oracle status, and continuity-ledger boundaries remain valid."
-        acceptance_gates = "Phase report exists; validation or blocker evidence is recorded; oracle item, progress log, handoff, source packet, and continuity ledger are updated; minimal-change scope and independent critic verdict are recorded."
-        test_and_regression = validation_requirement_text(args.validation_command)
-        acceptance_criteria = (
-            f"- {current_feature_id} has evidence or a documented blocker.\n"
-            f"- `{docs_path}/{phase['report']}` exists or is named as blocked evidence.\n"
-            "- `source-packet.md`, `continuity-ledger.md`, `progress-log.md`, and `agent-handoff.md` reflect the latest code facts and next action.\n"
-            "- Minimal-change scope, test evidence, and independent critic verdict are recorded."
-        )
-        if is_terminal:
-            regression_scope += f" {TERMINAL_REGRESSION_GATE}."
-            acceptance_gates += " Terminal phase performs whole-demand regression or records an explicit blocker."
-            test_and_regression += " Run whole-demand regression across completed feature-oracle items before marking the full requirement complete."
-            acceptance_criteria += "\n- Whole-demand regression over completed oracle items is recorded or explicitly blocked."
+        # The phase file is intentionally thin: a grep header, the single
+        # authoritative JSON contract, and the two narrative sections the JSON
+        # cannot carry. Everything else lives once in README/manifest/runtime.
         rendered = render(
             phase_template,
             {
                 "PHASE_NUMBER": phase["number"],
                 "PHASE_NAME": phase["name"],
-                "GOAL": goal_target,
-                "ARCHITECTURE": "This phase inherits code facts and boundary decisions through `context-profile.json` triggers, targeted `source-packet.md` sections, targeted `continuity-ledger.md` rows, and prior evidence from the dependency phase report.",
-                "TECH_STACK": "Repository stack is not assumed by the scaffold; confirm concrete frameworks, services, commands, and tests during baseline code inspection.",
+                "GOAL": phase_goal(args.title, phase["name"], index),
                 "PHASE_CONTRACT_JSON": contract_json,
                 "PHASE_ID": phase["id"],
-                "GOAL_TARGET": goal_target,
-                "REPO_PATH": args.repo_path,
-                "PHASE_FILE": f"{docs_path}/{phase['file']}",
-                "GOAL_PROMPT_CONSTRAINTS": goal_constraints,
                 "DEPENDS_ON": phase["depends_on"],
                 "UNLOCKS": unlocks,
-                "DOCS_PATH": docs_path,
-                "LOOP_CONTRACT_PATH": f"{docs_path}/loop-contract.json",
+                "FEATURE_ID": current_feature_id,
                 "CONTEXT_PROFILE_PATH": f"{docs_path}/context-profile.json",
                 "LOOP_STATE_PATH": f"{docs_path}/loop-state.json",
-                "PRIMARY_CONTEXT": ", ".join(phase_primary_context(docs_path)),
-                "LIKELY_EDIT_PATHS": ", ".join(phase_edit_paths(docs_path)),
-                "DO_NOT_EDIT": ", ".join(phase_protected_paths()),
-                "VALIDATION_COMMANDS": args.validation_command,
-                "BROWSER_CHECKS": "No browser route captured by scaffold; add route, viewport, and screenshot evidence before UI completion.",
-                "REGRESSION_SCOPE": regression_scope,
-                "COMPLIANCE_GATES": "Do not read/write secrets, mutate production data, deploy, or change external services without documented approval.",
-                "ROLLBACK_PLAN": "Revert phase-scoped changes and restore runtime docs from git if validation fails.",
-                "ACCEPTANCE_GATES": acceptance_gates,
-                "EVIDENCE_OUTPUT": f"`{docs_path}/{phase['report']}`",
-                "STOP_CONDITIONS": "Stop if exact code paths, credentials, approvals, destructive commands, production data access, or out-of-scope edits are required but undocumented.",
-                "FEATURE_ORACLE_PATH": f"{docs_path}/feature-oracle.json",
-                "PROGRESS_LOG_PATH": f"{docs_path}/progress-log.md",
-                "AGENT_HANDOFF_PATH": f"{docs_path}/agent-handoff.md",
-                "CONTINUITY_LEDGER_PATH": f"{docs_path}/continuity-ledger.md",
-                "NEXT_WINDOW_PROMPT_PATH": f"{docs_path}/next-window-prompt.md",
-                "FEATURE_ID": current_feature_id,
-                "PRIOR_PHASE_EVIDENCE": prior_phase_evidence,
-                "BOUNDARY_TO_PRESERVE": "code/interface facts written by prior phases and any downstream contract named in the continuity ledger",
-                "PHASE_HANDOFF_OUTPUT": "phase report, progress-log entry, oracle evidence, source-packet code summary, continuity-ledger update, and agent-handoff next action",
-                "TASK_SPEC": f"Execute {phase['id']} by using the phase contract, updating {current_feature_id}, and preserving the dependency chain `{dependency_flow}`.",
-                "IN_SCOPE": f"- Work needed to satisfy {current_feature_id} for {phase['name']}.\n- Code inspection and summary writeback required to keep later phases aligned.",
-                "OUT_OF_SCOPE": "- Production deployment.\n- Production data mutation.\n- Unrelated feature work outside this phase chain.",
-                "CONTEXT_POLICY": context_policy,
                 "R1_NAME": "Continuity-Preserving Execution",
                 "R1_BODY": f"{phase['id']} must update {current_feature_id}, produce durable evidence, and write code/interface facts back so the next phase can continue without hidden chat context.",
-                "TEST_AND_REGRESSION_REQUIREMENTS": test_and_regression,
-                "COMPLIANCE_AND_SAFETY_REQUIREMENTS": "Do not expose secrets, mutate production data, deploy, or use external services unless the required approval and source packet entry exist.",
-                "ROLLBACK_AND_RECOVERY": "Revert phase-scoped code changes, restore runtime docs from git, and mark the oracle item blocked if validation cannot be recovered.",
-                "EXECUTION_CAPTURE": "Write the phase report, append progress-log evidence, update oracle evidence, update continuity-ledger boundaries, and refresh agent-handoff next action.",
-                "REPORT_TEMPLATE": f"`{docs_path}/reports/phase-report-template.md`",
                 "CRITIC_PROTOCOL": "Reject completion if evidence is missing, tests or critic review are absent, code facts were not written back, continuity boundaries are stale, scope expansion lacks justification, or the phase tries to unlock dependent work without a report.",
-                "ACCEPTANCE_CRITERIA": acceptance_criteria,
-                "RISKS": "- Phase isolation can break if downstream boundary changes are not recorded.\n- Implementation can drift if code summaries stay stale.\n- Long-running agents can repeat work if handoff evidence is incomplete.",
             },
         )
         (output / phase["file"]).write_text(rendered, encoding="utf-8")

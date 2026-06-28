@@ -112,9 +112,8 @@ class SecondAgentQualityTests(unittest.TestCase):
         self.assertNotIn("python3 -m unittest discover tests", combined)
         self.assertIn("Starter validation discovery command", readme)
         self.assertIn("This command is not completion evidence by itself", readme)
-        self.assertIn("VALIDATION_COMMANDS: rg --files", phase)
-        self.assertIn("Run `rg --files", phase)
 
+        # The discovery command lives in the phase's single JSON contract.
         match = re.search(r"## Machine Contract.*?```json\s*(.*?)\s*```", phase, re.DOTALL)
         self.assertIsNotNone(match)
         contract = json.loads(match.group(1))
@@ -160,15 +159,25 @@ class SecondAgentQualityTests(unittest.TestCase):
         ]
         for phase_id, file_name, depends_on, unlocks, feature_id in phases:
             text = read(output / file_name)
-            self.assertIn("## Cross-Phase Continuity", text, file_name)
-            self.assertIn(f"- Depends on: {depends_on}", text, file_name)
-            self.assertIn(f"- Unlocks: {unlocks}", text, file_name)
-            self.assertIn(f"- Feature-oracle item: {feature_id}", text, file_name)
-            self.assertIn("## Code Summary Writeback", text, file_name)
-            self.assertIn("source-packet.md", text, file_name)
-            self.assertIn("continuity-ledger.md", text, file_name)
-            self.assertIn("agent-handoff.md", text, file_name)
-            self.assertRegex(text, rf"GOAL_PROMPT: Complete {phase_id} .*")
+            # Cross-phase cohesion now lives in a compact grep header instead of
+            # repeated prose sections.
+            self.assertIn(f"- PHASE_ID: {phase_id}", text, file_name)
+            self.assertIn(f"- DEPENDS_ON: {depends_on}", text, file_name)
+            self.assertIn(f"- UNLOCKS: {unlocks}", text, file_name)
+            self.assertIn(f"- FEATURE: {feature_id}", text, file_name)
+
+            # The single JSON contract still mandates code-summary writeback and
+            # carries the runnable goal prompt and dependency wiring.
+            match = re.search(r"## Machine Contract.*?```json\s*(.*?)\s*```", text, re.DOTALL)
+            self.assertIsNotNone(match, file_name)
+            contract = json.loads(match.group(1))
+            self.assertTrue(contract["goal"]["prompt"].startswith(f"Complete {phase_id} "), file_name)
+            artifacts = " ".join(contract["evidence"]["required_artifacts"]).lower()
+            self.assertIn("continuity-ledger", artifacts, file_name)
+            self.assertIn("source-packet", artifacts, file_name)
+            self.assertIn("handoff", artifacts, file_name)
+            self.assertEqual(contract["phase"]["depends_on"], [] if depends_on == "none" else [depends_on], file_name)
+            self.assertEqual(contract["phase"]["unlocks"], [] if unlocks == "none" else [unlocks], file_name)
 
     def test_manifest_and_continuity_ledger_preserve_related_todo_chain(self) -> None:
         tmp, output = self.scaffold()
